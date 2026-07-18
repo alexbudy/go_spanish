@@ -1,0 +1,309 @@
+// Package store provides SQLite-backed persistence for words, profiles, and
+// per-profile rankings, mirroring the schema used by the original Python
+// spanish_buddy project.
+package store
+
+import (
+	"context"
+	"database/sql"
+	_ "embed"
+	"encoding/csv"
+	"errors"
+	"fmt"
+	"io"
+	"strings"
+
+	_ "modernc.org/sqlite"
+)
+
+//go:embed schema.sql
+var schemaSQL string
+
+//go:embed nouns.csv
+var nounsCSV string
+
+// Locale identifies a training direction: which language the question is
+// shown in, and which language the answer must be given in.
+type Locale string
+
+const (
+	EsToEn Locale = "es_to_en"
+	EnToEs Locale = "en_to_es"
+)
+
+// QuestionLang returns the language ("es" or "en") the target word is shown in.
+func (l Locale) QuestionLang() string { return string(l)[:2] }
+
+// AnswerLang returns the language ("es" or "en") the correct answer is in.
+func (l Locale) AnswerLang() string { return string(l)[len(l)-2:] }
+
+func (l Locale) column() (string, error) {
+	switch l {
+	case EsToEn, EnToEs:
+		return string(l), nil
+	default:
+		return "", fmt.Errorf("store: unknown locale %q", l)
+	}
+}
+
+// Word is a single Spanish/English noun pair.
+type Word struct {
+	ID      int64
+	Spanish string
+	English string
+	Gender  string
+}
+
+// Text returns the word's text in the given locale's question language.
+func (w Word) Text(lang string) string {
+	if lang == "en" {
+		return w.English
+	}
+	return w.Spanish
+}
+
+// Store wraps a SQLite database connection.
+type Store struct {
+	db *sql.DB
+}
+
+// Open opens (and if necessary creates) the SQLite database at path with
+// foreign key enforcement turned on.
+func Open(path string) (*Store, error) {
+	db, err := sql.Open("sqlite", path+"?_pragma=foreign_keys(1)")
+	if err != nil {
+		return nil, fmt.Errorf("store: open %s: %w", path, err)
+	}
+	return &Store{db: db}, nil
+}
+
+func (s *Store) Close() error { return s.db.Close() }
+
+// EnsureSchema creates the nouns/profiles/rankings tables if they don't exist.
+func (s *Store) EnsureSchema(ctx context.Context) error {
+	for _, stmt := range strings.Split(schemaSQL, ";") {
+		stmt = strings.TrimSpace(stmt)
+		if stmt == "" {
+			continue
+		}
+		if _, err := s.db.ExecContext(ctx, stmt); err != nil {
+			return fmt.Errorf("store: ensure schema: %w", err)
+		}
+	}
+	return nil
+}
+
+// SeedNouns loads the embedded word list into the nouns table, unless it has
+// already been populated.
+func (s *Store) SeedNouns(ctx context.Context) error {
+	var count int
+	if err := s.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM nouns").Scan(&count); err != nil {
+		return fmt.Errorf("store: count nouns: %w", err)
+	}
+	if count > 0 {
+		return nil
+	}
+
+	reader := csv.NewReader(strings.NewReader(nounsCSV))
+	header, err := reader.Read()
+	if err != nil {
+		return fmt.Errorf("store: read nouns header: %w", err)
+	}
+	colIdx := make(map[string]int, len(header))
+	for i, name := range header {
+		colIdx[name] = i
+	}
+
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("store: seed nouns: %w", err)
+	}
+	defer tx.Rollback()
+
+	stmt, err := tx.PrepareContext(ctx, "INSERT INTO nouns (spanish, english, gender) VALUES (?, ?, ?)")
+	if err != nil {
+		return fmt.Errorf("store: seed nouns: %w", err)
+	}
+	defer stmt.Close()
+
+	for {
+		row, err := reader.Read()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return fmt.Errorf("store: read nouns row: %w", err)
+		}
+		spanish := row[colIdx["spanish"]]
+		english := row[colIdx["english"]]
+		gender := row[colIdx["gender"]]
+		if _, err := stmt.ExecContext(ctx, spanish, english, gender); err != nil {
+			return fmt.Errorf("store: insert noun %q: %w", english, err)
+		}
+	}
+
+	return tx.Commit()
+}
+
+// InitProfile creates a new profile and seeds a zeroed ranking row for every
+// existing noun.
+func (s *Store) InitProfile(ctx context.Context, name string) (int64, error) {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return 0, fmt.Errorf("store: init profile: %w", err)
+	}
+	defer tx.Rollback()
+
+	res, err := tx.ExecContext(ctx, "INSERT INTO profiles (name) VALUES (?)", name)
+	if err != nil {
+		return 0, fmt.Errorf("store: insert profile %q: %w", name, err)
+	}
+	profileID, err := res.LastInsertId()
+	if err != nil {
+		return 0, fmt.Errorf("store: init profile: %w", err)
+	}
+
+	rows, err := tx.QueryContext(ctx, "SELECT id FROM nouns")
+	if err != nil {
+		return 0, fmt.Errorf("store: init profile: %w", err)
+	}
+	var nounIDs []int64
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			rows.Close()
+			return 0, fmt.Errorf("store: init profile: %w", err)
+		}
+		nounIDs = append(nounIDs, id)
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return 0, fmt.Errorf("store: init profile: %w", err)
+	}
+
+	stmt, err := tx.PrepareContext(ctx, "INSERT INTO rankings (profile_id, noun_id) VALUES (?, ?)")
+	if err != nil {
+		return 0, fmt.Errorf("store: init profile: %w", err)
+	}
+	defer stmt.Close()
+	for _, nounID := range nounIDs {
+		if _, err := stmt.ExecContext(ctx, profileID, nounID); err != nil {
+			return 0, fmt.Errorf("store: init profile: %w", err)
+		}
+	}
+
+	return profileID, tx.Commit()
+}
+
+// GetProfiles returns up to 3 non-deleted profile names, oldest first.
+func (s *Store) GetProfiles(ctx context.Context) ([]string, error) {
+	rows, err := s.db.QueryContext(ctx,
+		"SELECT name FROM profiles WHERE deleted_at IS NULL ORDER BY created_at ASC LIMIT 3")
+	if err != nil {
+		return nil, fmt.Errorf("store: get profiles: %w", err)
+	}
+	defer rows.Close()
+
+	var names []string
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			return nil, fmt.Errorf("store: get profiles: %w", err)
+		}
+		names = append(names, name)
+	}
+	return names, rows.Err()
+}
+
+// GetAllWords returns every noun's text in the given language ("en" or "es"),
+// used to build the pool of multiple-choice answers.
+func (s *Store) GetAllWords(ctx context.Context, lang string) ([]string, error) {
+	rows, err := s.db.QueryContext(ctx, "SELECT spanish, english FROM nouns")
+	if err != nil {
+		return nil, fmt.Errorf("store: get all words: %w", err)
+	}
+	defer rows.Close()
+
+	var words []string
+	for rows.Next() {
+		var spanish, english string
+		if err := rows.Scan(&spanish, &english); err != nil {
+			return nil, fmt.Errorf("store: get all words: %w", err)
+		}
+		if lang == "en" {
+			words = append(words, english)
+		} else {
+			words = append(words, spanish)
+		}
+	}
+	return words, rows.Err()
+}
+
+// GetWordsForQuestion returns the least-known words for profile in the given
+// locale, excluding excludeWordIDs, ordered by ranking ascending with random
+// tie-breaking, limited to numWords.
+func (s *Store) GetWordsForQuestion(ctx context.Context, profile string, locale Locale, excludeWordIDs []int64, numWords int) ([]Word, error) {
+	column, err := locale.column()
+	if err != nil {
+		return nil, err
+	}
+
+	var sb strings.Builder
+	sb.WriteString(`SELECT n.id, n.spanish, n.english, n.gender
+FROM nouns n
+INNER JOIN rankings r ON n.id = r.noun_id
+INNER JOIN profiles p ON p.id = r.profile_id
+WHERE p.name = ?`)
+	args := []any{profile}
+
+	if len(excludeWordIDs) > 0 {
+		placeholders := make([]string, len(excludeWordIDs))
+		for i, id := range excludeWordIDs {
+			placeholders[i] = "?"
+			args = append(args, id)
+		}
+		sb.WriteString(" AND n.id NOT IN (" + strings.Join(placeholders, ",") + ")")
+	}
+
+	sb.WriteString(fmt.Sprintf(" ORDER BY %s ASC, RANDOM() LIMIT ?", column))
+	args = append(args, numWords)
+
+	rows, err := s.db.QueryContext(ctx, sb.String(), args...)
+	if err != nil {
+		return nil, fmt.Errorf("store: get words for question: %w", err)
+	}
+	defer rows.Close()
+
+	var words []Word
+	for rows.Next() {
+		var w Word
+		if err := rows.Scan(&w.ID, &w.Spanish, &w.English, &w.Gender); err != nil {
+			return nil, fmt.Errorf("store: get words for question: %w", err)
+		}
+		words = append(words, w)
+	}
+	return words, rows.Err()
+}
+
+// UpdateRankingForWord nudges a word's ranking for profile in the given
+// locale up (correct) or down (incorrect) by rankingAdjustment.
+func (s *Store) UpdateRankingForWord(ctx context.Context, wordID int64, locale Locale, profile string, gotCorrect bool, rankingAdjustment float64) error {
+	column, err := locale.column()
+	if err != nil {
+		return err
+	}
+	if !gotCorrect {
+		rankingAdjustment = -rankingAdjustment
+	}
+
+	var profileID int64
+	if err := s.db.QueryRowContext(ctx, "SELECT id FROM profiles WHERE name = ?", profile).Scan(&profileID); err != nil {
+		return fmt.Errorf("store: update ranking: lookup profile %q: %w", profile, err)
+	}
+
+	query := fmt.Sprintf("UPDATE rankings SET %s = %s + ? WHERE profile_id = ? AND noun_id = ?", column, column)
+	if _, err := s.db.ExecContext(ctx, query, rankingAdjustment, profileID, wordID); err != nil {
+		return fmt.Errorf("store: update ranking: %w", err)
+	}
+	return nil
+}

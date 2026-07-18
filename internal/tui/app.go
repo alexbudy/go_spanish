@@ -1,0 +1,177 @@
+// Package tui implements the Spanish Buddy bubbletea interface: choosing or
+// creating a profile, picking a training direction, and running a
+// multiple-choice vocabulary quiz against the store package.
+package tui
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/charmbracelet/bubbles/textinput"
+	tea "github.com/charmbracelet/bubbletea"
+
+	"go_spanish/internal/store"
+)
+
+type screen int
+
+const (
+	screenProfileSelect screen = iota
+	screenNewProfile
+	screenDirectionSelect
+	screenNumQuestions
+	screenNumOptions
+	screenQuestion
+	screenFeedback
+	screenResults
+	screenGoodbye
+	screenError
+)
+
+const (
+	maxProfileSlots = 3
+	newProfileValue = "__new__"
+	exitValue       = "__exit__"
+)
+
+// Model is the root bubbletea model driving the whole application.
+type Model struct {
+	store *store.Store
+	ctx   context.Context
+	err   error
+
+	screen screen
+
+	existingProfiles []string
+	profileMenu      choiceList
+
+	newProfileInput textinput.Model
+	newProfileErr   string
+
+	directionMenu choiceList
+
+	numQuestionsInput textinput.Model
+	numQuestionsErr   string
+
+	numOptionsInput textinput.Model
+	numOptionsErr   string
+
+	profile string
+	locale  store.Locale
+
+	quiz       quizState
+	answerMenu choiceList
+}
+
+// New builds the initial Model, loading whatever profiles already exist.
+func New(s *store.Store) Model {
+	m := Model{
+		store: s,
+		ctx:   context.Background(),
+	}
+	m.newProfileInput = textinput.New()
+	m.newProfileInput.Placeholder = "profile name"
+	m.newProfileInput.CharLimit = 32
+
+	m.numQuestionsInput = textinput.New()
+	m.numQuestionsInput.Placeholder = "10"
+	m.numQuestionsInput.CharLimit = 3
+
+	m.numOptionsInput = textinput.New()
+	m.numOptionsInput.Placeholder = "4"
+	m.numOptionsInput.CharLimit = 1
+
+	m.loadProfiles()
+	return m
+}
+
+func (m *Model) loadProfiles() {
+	profiles, err := m.store.GetProfiles(m.ctx)
+	if err != nil {
+		m.fail(err)
+		return
+	}
+	m.existingProfiles = profiles
+	m.buildProfileMenu()
+	m.screen = screenProfileSelect
+}
+
+func (m *Model) buildProfileMenu() {
+	var items []choiceItem
+	for _, name := range m.existingProfiles {
+		items = append(items, choiceItem{label: name, value: name})
+	}
+	for i := len(m.existingProfiles); i < maxProfileSlots; i++ {
+		items = append(items, choiceItem{label: "-- new profile --", value: newProfileValue})
+	}
+	items = append(items, choiceItem{label: "Exit :(", value: exitValue})
+	m.profileMenu = newChoiceList("Select a profile (or exit)", items)
+}
+
+func (m *Model) fail(err error) {
+	m.err = err
+	m.screen = screenError
+}
+
+func (m Model) Init() tea.Cmd {
+	return nil
+}
+
+func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	if keyMsg, ok := msg.(tea.KeyMsg); ok {
+		switch keyMsg.String() {
+		case "ctrl+c":
+			return m, tea.Quit
+		}
+	}
+
+	switch m.screen {
+	case screenProfileSelect:
+		return m.updateProfileSelect(msg)
+	case screenNewProfile:
+		return m.updateNewProfile(msg)
+	case screenDirectionSelect:
+		return m.updateDirectionSelect(msg)
+	case screenNumQuestions:
+		return m.updateNumQuestions(msg)
+	case screenNumOptions:
+		return m.updateNumOptions(msg)
+	case screenQuestion:
+		return m.updateQuestion(msg)
+	case screenFeedback:
+		return m.updateFeedback(msg)
+	case screenResults:
+		return m.updateResults(msg)
+	case screenGoodbye, screenError:
+		if _, ok := msg.(tea.KeyMsg); ok {
+			return m, tea.Quit
+		}
+	}
+	return m, nil
+}
+
+func (m Model) View() string {
+	switch m.screen {
+	case screenProfileSelect:
+		return m.viewProfileSelect()
+	case screenNewProfile:
+		return m.viewNewProfile()
+	case screenDirectionSelect:
+		return m.viewDirectionSelect()
+	case screenNumQuestions:
+		return m.viewNumQuestions()
+	case screenNumOptions:
+		return m.viewNumOptions()
+	case screenQuestion:
+		return m.viewQuestion()
+	case screenFeedback:
+		return m.viewFeedback()
+	case screenResults:
+		return m.viewResults()
+	case screenGoodbye:
+		return titleStyle.Render("Exiting the program, thanks for training!") + "\n"
+	case screenError:
+		return errorStyle.Render(fmt.Sprintf("Error: %v", m.err)) + helpStyle.Render("\n\npress any key to exit")
+	}
+	return ""
+}
