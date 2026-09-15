@@ -22,6 +22,16 @@ var schemaSQL string
 //go:embed nouns.csv
 var nounsCSV string
 
+// QuizMode identifies which words to select for a quiz: well-known, least-known, or any.
+type QuizMode string
+
+const (
+	// WellKnown selects words the user knows well.
+	WellKnown  QuizMode = "well_known"
+	Any        QuizMode = "any"
+	LeastKnown QuizMode = "least_known"
+)
+
 // Locale identifies a training direction: which language the question is
 // shown in, and which language the answer must be given in.
 type Locale string

@@ -19,6 +19,7 @@ const (
 	screenProfileSelect screen = iota
 	screenNewProfile
 	screenDirectionSelect
+	screenQuizModeSelect
 	screenNumQuestions
 	screenNumOptions
 	screenQuestion
@@ -49,6 +50,7 @@ type Model struct {
 	newProfileErr   string
 
 	directionMenu choiceList
+	quizModeMenu  choiceList
 
 	numQuestionsInput textinput.Model
 	numQuestionsErr   string
@@ -56,8 +58,9 @@ type Model struct {
 	numOptionsInput textinput.Model
 	numOptionsErr   string
 
-	profile string
-	locale  store.Locale
+	profile  string
+	locale   store.Locale
+	quizMode store.QuizMode
 
 	quiz       quizState
 	answerMenu choiceList
@@ -132,6 +135,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.updateNewProfile(msg)
 	case screenDirectionSelect:
 		return m.updateDirectionSelect(msg)
+	case screenQuizModeSelect:
+		return m.updateQuizModeSelect(msg)
 	case screenNumQuestions:
 		return m.updateNumQuestions(msg)
 	case screenNumOptions:
@@ -158,6 +163,8 @@ func (m Model) View() string {
 		return m.viewNewProfile()
 	case screenDirectionSelect:
 		return m.viewDirectionSelect()
+	case screenQuizModeSelect:
+		return m.viewQuizModeSelect()
 	case screenNumQuestions:
 		return m.viewNumQuestions()
 	case screenNumOptions:
