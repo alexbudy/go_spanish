@@ -17,6 +17,14 @@ func (m *Model) buildDirectionMenu() {
 	})
 }
 
+func (m *Model) buildQuizModeMenu() {
+	m.quizModeMenu = newChoiceList("Select a quiz mode", []choiceItem{
+		{label: "1. Well-known words", value: string(store.WellKnown)},
+		{label: "2. Any words", value: string(store.Any)},
+		{label: "3. Least-known words", value: string(store.LeastKnown)},
+	})
+}
+
 func (m Model) updateDirectionSelect(msg tea.Msg) (tea.Model, tea.Cmd) {
 	keyMsg, ok := msg.(tea.KeyMsg)
 	if !ok {
@@ -29,10 +37,9 @@ func (m Model) updateDirectionSelect(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.directionMenu.down()
 	case "enter":
 		m.locale = store.Locale(m.directionMenu.selected().value)
-		m.numQuestionsInput.SetValue("")
-		m.numQuestionsInput.Focus()
-		m.numQuestionsErr = ""
-		m.screen = screenNumQuestions
+
+		m.buildQuizModeMenu()
+		m.screen = screenQuizModeSelect
 		return m, textinput.Blink
 	case "esc":
 		m.screen = screenProfileSelect
@@ -42,6 +49,35 @@ func (m Model) updateDirectionSelect(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m Model) viewDirectionSelect() string {
 	return m.directionMenu.view() + helpStyle.Render("\n↑/↓ to navigate • enter to select • esc to go back")
+}
+
+func (m Model) updateQuizModeSelect(msg tea.Msg) (tea.Model, tea.Cmd) {
+	keyMsg, ok := msg.(tea.KeyMsg)
+	if !ok {
+		return m, nil
+	}
+	switch keyMsg.String() {
+	case "up", "k":
+		m.quizModeMenu.up()
+	case "down", "j":
+		m.quizModeMenu.down()
+	case "enter":
+		m.locale = store.Locale(m.directionMenu.selected().value)
+
+		m.numQuestionsInput.SetValue("")
+		m.numQuestionsInput.Focus()
+		m.numQuestionsErr = ""
+		m.screen = screenNumQuestions
+
+		return m, textinput.Blink
+	case "esc":
+		m.screen = screenProfileSelect
+	}
+	return m, nil
+}
+
+func (m Model) viewQuizModeSelect() string {
+	return m.quizModeMenu.view() + helpStyle.Render("\n↑/↓ to navigate • enter to select • esc to go back")
 }
 
 func (m Model) updateNumQuestions(msg tea.Msg) (tea.Model, tea.Cmd) {
