@@ -13,6 +13,8 @@ import (
 )
 
 type quizState struct {
+	quizMode store.QuizMode
+
 	totalQuestions    int
 	numOptions        int
 	index             int // 1-based index of the question currently shown/answered
@@ -34,6 +36,7 @@ func (m *Model) startQuiz() error {
 		return err
 	}
 	m.quiz = quizState{
+		quizMode:       m.quiz.quizMode,
 		totalQuestions: m.quiz.totalQuestions,
 		numOptions:     m.quiz.numOptions,
 		index:          1,
@@ -43,7 +46,7 @@ func (m *Model) startQuiz() error {
 }
 
 func (m *Model) loadNextQuestion() error {
-	words, err := m.store.GetWordsForQuestion(m.ctx, m.profile, m.locale, m.quiz.questionedWordIDs, 10)
+	words, err := m.store.GetWordsForQuestion(m.ctx, m.profile, m.quiz.quizMode, m.locale, m.quiz.questionedWordIDs, 10)
 	if err != nil {
 		return err
 	}

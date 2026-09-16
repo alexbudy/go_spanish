@@ -28,7 +28,7 @@ type QuizMode string
 const (
 	// WellKnown selects words the user knows well.
 	WellKnown  QuizMode = "well_known"
-	Any        QuizMode = "any"
+	Any        QuizMode = "any" // Any selects words regardless of the words ranking for the profile.
 	LeastKnown QuizMode = "least_known"
 )
 
@@ -249,10 +249,10 @@ func (s *Store) GetAllWords(ctx context.Context, lang string) ([]string, error) 
 	return words, rows.Err()
 }
 
-// GetWordsForQuestion returns the least-known words for profile in the given
-// locale, excluding excludeWordIDs, ordered by ranking ascending with random
-// tie-breaking, limited to numWords.
-func (s *Store) GetWordsForQuestion(ctx context.Context, profile string, locale Locale, excludeWordIDs []int64, numWords int) ([]Word, error) {
+// GetWordsForQuestion returns the words for profile in the given
+// locale, selected by 'mode' (random, least/most known) excluding excludeWordIDs,
+// ordered by ranking ascending with random tie-breaking, limited to numWords.
+func (s *Store) GetWordsForQuestion(ctx context.Context, profile string, quizMode QuizMode, locale Locale, excludeWordIDs []int64, numWords int) ([]Word, error) {
 	column, err := locale.column()
 	if err != nil {
 		return nil, err
@@ -273,6 +273,18 @@ WHERE p.name = ?`)
 			args = append(args, id)
 		}
 		sb.WriteString(" AND n.id NOT IN (" + strings.Join(placeholders, ",") + ")")
+	}
+
+	switch quizMode {
+	case Any:
+		sb.WriteString(" ORDER BY RANDOM() LIMIT ?")
+		args = append(args, numWords)
+	case LeastKnown:
+		sb.WriteString(fmt.Sprintf(" ORDER BY %s ASC LIMIT ?", column))
+		args = append(args, numWords)
+	case WellKnown:
+		sb.WriteString(fmt.Sprintf(" ORDER BY %s DESC LIMIT ?", column))
+		args = append(args, numWords)
 	}
 
 	sb.WriteString(fmt.Sprintf(" ORDER BY %s ASC, RANDOM() LIMIT ?", column))
