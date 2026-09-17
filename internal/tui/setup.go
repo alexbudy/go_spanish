@@ -65,7 +65,6 @@ func (m Model) updateQuizModeSelect(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case "enter":
 		m.locale = store.Locale(m.directionMenu.selected().value)
 
-		m.numQuestionsInput.SetValue("")
 		m.numQuestionsInput.Focus()
 		m.numQuestionsErr = ""
 		m.screen = screenNumQuestions
@@ -106,7 +105,6 @@ func (m Model) updateNumQuestions(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		m.quiz.totalQuestions = n
 		m.numQuestionsInput.Blur()
-		m.numOptionsInput.SetValue("")
 		m.numOptionsInput.Focus()
 		m.numOptionsErr = ""
 		m.screen = screenNumOptions
@@ -120,7 +118,7 @@ func (m Model) updateNumQuestions(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m Model) viewNumQuestions() string {
 	var b strings.Builder
-	b.WriteString(promptStyle.Render("How many questions would you like to solve? (1-20)"))
+	b.WriteString(promptStyle.Render("How many words would you like to try? (1-20)"))
 	b.WriteString("\n\n")
 	b.WriteString(m.numQuestionsInput.View())
 	if m.numQuestionsErr != "" {

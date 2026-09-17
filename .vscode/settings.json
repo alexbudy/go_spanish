@@ -8,5 +8,8 @@
     },
     "gopls": {
         "formatting.gofumpt": true
-    }
+    },
+    "cSpell.words": [
+        "textinput"
+    ]
 }

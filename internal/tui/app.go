@@ -76,12 +76,17 @@ func New(s *store.Store) Model {
 	m.newProfileInput.Placeholder = "profile name"
 	m.newProfileInput.CharLimit = 32
 
+	defaultNumQuestions := "10"
 	m.numQuestionsInput = textinput.New()
-	m.numQuestionsInput.Placeholder = "10"
+	m.numQuestionsInput.Placeholder = defaultNumQuestions
+	m.numQuestionsInput.SetValue(defaultNumQuestions)
+	m.numQuestionsInput.Width = 5 // Ensure full placeholder shown
 	m.numQuestionsInput.CharLimit = 3
 
+	defaultNumAnswers := "4"
 	m.numOptionsInput = textinput.New()
-	m.numOptionsInput.Placeholder = "4"
+	m.numOptionsInput.Placeholder = defaultNumAnswers
+	m.numOptionsInput.SetValue(defaultNumAnswers)
 	m.numOptionsInput.CharLimit = 1
 
 	m.loadProfiles()
