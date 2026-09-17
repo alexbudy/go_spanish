@@ -21,7 +21,8 @@ func (m *Model) buildQuizModeMenu() {
 	m.quizModeMenu = newChoiceList("Select a quiz mode", []choiceItem{
 		{label: "1. Well-known words", value: string(store.WellKnown)},
 		{label: "2. Any words", value: string(store.Any)},
-		{label: "3. Least-known words", value: string(store.LeastKnown)},
+		{label: "3. Least-known words\n     ----------", value: string(store.LeastKnown)},
+		{label: "4. Manage words", value: string(store.ManageWords)},
 	})
 }
 

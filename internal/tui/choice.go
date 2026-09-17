@@ -53,7 +53,18 @@ func (c choiceList) view() string {
 	for i, item := range c.items {
 		if i == c.cursor {
 			b.WriteString(cursorStyle.Render("> "))
-			b.WriteString(selectedStyle.Render(item.label))
+
+			lines := strings.Split(item.label, "\n")
+			b.WriteString(selectedStyle.Render(lines[0]))
+
+			// add secondary lines as part of selection, but with a different style so they don't compete with the primary line
+			if len(lines) > 1 {
+				for _, l := range lines[1:] {
+					b.WriteString("\n")
+					b.WriteString(selectedStyleSecondary.Render(l))
+				}
+			}
+
 		} else {
 			b.WriteString("  ")
 			b.WriteString(item.label)

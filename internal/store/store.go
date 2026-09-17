@@ -41,6 +41,11 @@ const (
 	EnToEs Locale = "en_to_es"
 )
 
+const (
+	// ManageWords is a special profile name used to manage words.
+	ManageWords = "manage_words"
+)
+
 // QuestionLang returns the language ("es" or "en") the target word is shown in.
 func (l Locale) QuestionLang() string { return string(l)[:2] }
 
