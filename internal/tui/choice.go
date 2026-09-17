@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"strconv"
 	"strings"
 )
 
@@ -44,10 +45,16 @@ func (c choiceList) selected() choiceItem {
 	return c.items[c.cursor]
 }
 
-func (c choiceList) view() string {
+// Pass optional profile name to include in the title, e.g. "Select a training direction for <profile>".
+func (c choiceList) view(profile ...string) string {
 	var b strings.Builder
 	if c.title != "" {
 		b.WriteString(promptStyle.Render(c.title))
+		if len(profile) > 0 {
+			b.WriteString(promptStyle.Render(" for "))
+			b.WriteString(promptStyleProfile.Render(strings.Join(profile, "")))
+		}
+
 		b.WriteString("\n\n")
 	}
 	for i, item := range c.items {
@@ -55,7 +62,7 @@ func (c choiceList) view() string {
 			b.WriteString(cursorStyle.Render("> "))
 
 			lines := strings.Split(item.label, "\n")
-			b.WriteString(selectedStyle.Render(lines[0]))
+			b.WriteString(selectedStyle.Render(strconv.Itoa(i+1) + ". " + lines[0]))
 
 			// add secondary lines as part of selection, but with a different style so they don't compete with the primary line
 			if len(lines) > 1 {
@@ -66,7 +73,7 @@ func (c choiceList) view() string {
 			}
 
 		} else {
-			b.WriteString("  ")
+			b.WriteString("  " + strconv.Itoa(i+1) + ". ")
 			b.WriteString(item.label)
 		}
 		b.WriteString("\n")

@@ -12,4 +12,5 @@ var (
 	successStyle           = lipgloss.NewStyle().Foreground(lipgloss.Color("42")).Bold(true)
 	helpStyle              = lipgloss.NewStyle().Foreground(lipgloss.Color("241")).MarginTop(1)
 	promptStyle            = lipgloss.NewStyle().Bold(true)
+	promptStyleProfile     = lipgloss.NewStyle().Bold(true).Italic(true)
 )

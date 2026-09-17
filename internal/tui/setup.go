@@ -12,17 +12,17 @@ import (
 
 func (m *Model) buildDirectionMenu() {
 	m.directionMenu = newChoiceList("Select a training direction", []choiceItem{
-		{label: "1. Provide spanish words, select english words", value: string(store.EsToEn)},
-		{label: "2. Provide english words, select spanish words", value: string(store.EnToEs)},
+		{label: "Provide spanish words, select english words", value: string(store.EsToEn)},
+		{label: "Provide english words, select spanish words", value: string(store.EnToEs)},
 	})
 }
 
 func (m *Model) buildQuizModeMenu() {
 	m.quizModeMenu = newChoiceList("Select a quiz mode", []choiceItem{
-		{label: "1. Well-known words", value: string(store.WellKnown)},
-		{label: "2. Any words", value: string(store.Any)},
-		{label: "3. Least-known words\n     ----------", value: string(store.LeastKnown)},
-		{label: "4. Manage words", value: string(store.ManageWords)},
+		{label: "Well-known words", value: string(store.WellKnown)},
+		{label: "Any words", value: string(store.Any)},
+		{label: "Least-known words\n     ----------", value: string(store.LeastKnown)},
+		{label: "Manage words", value: string(store.ManageWords)},
 	})
 }
 
@@ -49,7 +49,7 @@ func (m Model) updateDirectionSelect(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) viewDirectionSelect() string {
-	return m.directionMenu.view() + helpStyle.Render("\n↑/↓ to navigate • enter to select • esc to go back")
+	return m.directionMenu.view(m.profile) + helpStyle.Render("\n↑/↓ to navigate • enter to select • esc to go back")
 }
 
 func (m Model) updateQuizModeSelect(msg tea.Msg) (tea.Model, tea.Cmd) {

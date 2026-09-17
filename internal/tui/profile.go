@@ -2,6 +2,7 @@ package tui
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"unicode"
 
@@ -14,6 +15,15 @@ func (m Model) updateProfileSelect(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if !ok {
 		return m, nil
 	}
+
+	// Allow selecting a profile by number (1-based)
+	n, err := strconv.Atoi(keyMsg.String())
+	if err == nil && n >= 1 && n <= maxProfileSlots+1 { // Add one for the Exit option
+		m.profileMenu.cursor = n - 1
+
+		keyMsg = tea.KeyMsg{Type: tea.KeyEnter} // continue as if "enter" was pressed
+	}
+
 	switch keyMsg.String() {
 	case "up", "k":
 		m.profileMenu.up()

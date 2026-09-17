@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
+	"strconv"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/textinput"
@@ -109,6 +110,14 @@ func (m Model) updateQuestion(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if !ok {
 		return m, nil
 	}
+
+	// Allow selecting an answer by number (1-based)
+	n, err := strconv.Atoi(keyMsg.String())
+	if err == nil && n >= 1 && n <= len(m.answerMenu.items) {
+		m.answerMenu.cursor = n - 1
+		keyMsg = tea.KeyMsg{Type: tea.KeyEnter} // continue as if "enter" was pressed
+	}
+
 	switch keyMsg.String() {
 	case "up", "k":
 		m.answerMenu.up()
