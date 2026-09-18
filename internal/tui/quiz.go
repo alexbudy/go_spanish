@@ -186,6 +186,14 @@ func (m Model) updateResults(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if !ok {
 		return m, nil
 	}
+
+	// Allow selecting an answer by number (1-based)
+	n, err := strconv.Atoi(keyMsg.String())
+	if err == nil && (n == 1 || n == 2) {
+		m.answerMenu.cursor = n - 1
+		keyMsg = tea.KeyMsg{Type: tea.KeyEnter} // continue as if "enter" was pressed
+	}
+
 	switch keyMsg.String() {
 	case "up", "k":
 		m.answerMenu.up()
@@ -193,7 +201,7 @@ func (m Model) updateResults(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.answerMenu.down()
 	case "enter":
 		if m.answerMenu.selected().value == "Yes" {
-			m.numQuestionsInput.SetValue("")
+			m.numQuestionsInput.SetValue("10")
 			m.numQuestionsInput.Focus()
 			m.numQuestionsErr = ""
 			m.screen = screenNumQuestions

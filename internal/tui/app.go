@@ -19,6 +19,7 @@ const (
 	screenProfileSelect screen = iota
 	screenNewProfile
 	screenDeleteProfileConfirm
+	screenDeleteProfileConfirmFinal // final confirmation, require typing 'delete'
 	screenDirectionSelect
 	screenQuizModeSelect
 	screenNumQuestions
@@ -50,6 +51,11 @@ type Model struct {
 	newProfileInput textinput.Model
 	newProfileErr   string
 	delProfileErr   string
+
+	deleteProfileConfirmMenu choiceList
+	deleteProfileSpecialWord string // user must type this to confirm deletion
+	specialDeleteWordInput   textinput.Model
+	invalidDeleteWordErr     string
 
 	directionMenu choiceList
 	quizModeMenu  choiceList
@@ -140,6 +146,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.updateProfileSelect(msg)
 	case screenNewProfile:
 		return m.updateNewProfile(msg)
+	case screenDeleteProfileConfirm:
+		return m.updateDeleteProfileConfirm(msg)
+	// case screenDeleteProfileConfirmFinal:
+	// 	return m.updateDeleteProfileConfirm(msg)
 	case screenDirectionSelect:
 		return m.updateDirectionSelect(msg)
 	case screenQuizModeSelect:
@@ -168,6 +178,10 @@ func (m Model) View() string {
 		return m.viewProfileSelect()
 	case screenNewProfile:
 		return m.viewNewProfile()
+	case screenDeleteProfileConfirm:
+		return m.viewDeleteProfileConfirm()
+	case screenDeleteProfileConfirmFinal:
+		return m.viewDeleteProfileConfirmFinal()
 	case screenDirectionSelect:
 		return m.viewDirectionSelect()
 	case screenQuizModeSelect:

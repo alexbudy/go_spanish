@@ -17,13 +17,91 @@ func (m *Model) buildDirectionMenu() {
 	})
 }
 
+func (m *Model) buildDeleteProfileConfirmMenu() {
+	m.deleteProfileConfirmMenu = newChoiceList("Are you sure you want to delete this profile?", []choiceItem{
+		{label: "Yes, delete this profile (cannot be undone)", value: "yes"},
+		{label: "No, go back", value: "no"},
+	})
+}
+
 func (m *Model) buildQuizModeMenu() {
 	m.quizModeMenu = newChoiceList("Select a quiz mode", []choiceItem{
-		{label: "Well-known words", value: string(store.WellKnown)},
+		{label: "Profile's well-known words", value: string(store.WellKnown)},
 		{label: "Any words", value: string(store.Any)},
-		{label: "Least-known words\n     ----------", value: string(store.LeastKnown)},
+		{label: "Profile's least-known words\n     ----------", value: string(store.LeastKnown)},
 		{label: "Manage words", value: string(store.ManageWords)},
 	})
+}
+
+func (m Model) viewDeleteProfileConfirm() string {
+	return m.deleteProfileConfirmMenu.view() + helpStyle.Render("\n↑/↓ to navigate • enter to select • esc to go back")
+}
+
+func (m Model) updateDeleteProfileConfirm(msg tea.Msg) (tea.Model, tea.Cmd) {
+	keyMsg, ok := msg.(tea.KeyMsg)
+	if !ok {
+		return m, nil
+	}
+
+	// Allow deleting by number (1-based)
+	n, err := strconv.Atoi(keyMsg.String())
+	if err == nil && n == 1 || n == 2 { // Add one for the Exit option
+		m.profileMenu.cursor = n - 1
+
+		keyMsg = tea.KeyMsg{Type: tea.KeyEnter} // continue as if "enter" was pressed
+	}
+
+	switch keyMsg.String() {
+	case "up", "k":
+		m.deleteProfileConfirmMenu.up()
+	case "down", "j":
+		m.deleteProfileConfirmMenu.down()
+	case "enter":
+		if m.deleteProfileConfirmMenu.selected().value == "yes" {
+			if _, err := m.store.DeleteProfile(m.ctx, m.profile); err != nil {
+				m.fail(err)
+				return m, nil
+			}
+			m.screen = screenDeleteProfileConfirmFinal
+		} else {
+			m.screen = screenProfileSelect
+		}
+		return m, nil
+	case "esc":
+		m.screen = screenProfileSelect
+	}
+	return m, nil
+}
+
+func (m Model) viewDeleteProfileConfirmFinal() string {
+	specialDeleteWord := "delete" // word to type to delete profile
+
+	var b strings.Builder
+	b.WriteString(deleteConfirmStyle.Render("Type "))
+	b.WriteString(deleteConfirmSpecialWordStyle.Render(specialDeleteWord))
+	b.WriteString(deleteConfirmStyle.Render(" to confirm"))
+	b.WriteString("\n\n")
+	b.WriteString(m.numQuestionsInput.View())
+
+	m.specialDeleteWordInput = textinput.New()
+	m.specialDeleteWordInput.Placeholder = "delete"
+	m.numQuestionsInput.Width = 50 // Ensure full placeholder shown
+	m.numQuestionsInput.CharLimit = len(specialDeleteWord) + 3
+
+	if m.specialDeleteWordInput.Value() != specialDeleteWord {
+		b.WriteString("\n\n")
+		b.WriteString(errorStyle.Render(m.invalidDeleteWordErr))
+	}
+
+	b.WriteString(helpStyle.Render("\n\nenter to confirm • esc to go back"))
+	return b.String()
+}
+
+func (m Model) updateDeleteProfileConfirmFinal(msg tea.Msg) (tea.Model, tea.Cmd) {
+	// TODO: Implement final confirmation for deleting a profile, requiring the user to type 'delete' to confirm.
+	// numOptionsErr to be populated
+
+	return m, nil
 }
 
 func (m Model) updateDirectionSelect(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -31,6 +109,14 @@ func (m Model) updateDirectionSelect(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if !ok {
 		return m, nil
 	}
+	// Allow deleting by number (1-based)
+	n, err := strconv.Atoi(keyMsg.String())
+	if err == nil && (n == 1 || n == 2) { // Add one for the Exit option
+		m.profileMenu.cursor = n - 1
+
+		keyMsg = tea.KeyMsg{Type: tea.KeyEnter} // continue as if "enter" was pressed
+	}
+
 	switch keyMsg.String() {
 	case "up", "k":
 		m.directionMenu.up()
@@ -43,6 +129,7 @@ func (m Model) updateDirectionSelect(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.screen = screenQuizModeSelect
 		return m, textinput.Blink
 	case "esc":
+		m.buildProfileMenu() // rebuild profile menu in case using new profile
 		m.screen = screenProfileSelect
 	}
 	return m, nil
@@ -57,6 +144,15 @@ func (m Model) updateQuizModeSelect(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if !ok {
 		return m, nil
 	}
+
+	// Allow deleting by number (1-based) - TODO can refactor to avoid duplication with updateDirectionSelect
+	n, err := strconv.Atoi(keyMsg.String())
+	if err == nil && n >= 1 && n <= 4 { // three modes + manage words
+		m.profileMenu.cursor = n - 1
+
+		keyMsg = tea.KeyMsg{Type: tea.KeyEnter} // continue as if "enter" was pressed
+	}
+
 	switch keyMsg.String() {
 	case "up", "k":
 		m.quizModeMenu.up()

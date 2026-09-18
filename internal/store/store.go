@@ -210,7 +210,7 @@ func (s *Store) InitProfile(ctx context.Context, name string) (int64, error) {
 	return profileID, tx.Commit()
 }
 
-// DeleteProfile marks a profile as deleted. Possibly delete associated rankings in the future.
+// DeleteProfile hard deletes rankings and the profile itself, returning the number of deleted ranking rows.
 func (s *Store) DeleteProfile(ctx context.Context, name string) (int64, error) {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -218,12 +218,19 @@ func (s *Store) DeleteProfile(ctx context.Context, name string) (int64, error) {
 	}
 	defer tx.Rollback()
 
-	// Mark the profile as deleted
-	res, err := tx.ExecContext(ctx, "UPDATE profiles SET deleted_at = CURRENT_TIMESTAMP WHERE name = ?", name)
+	// hard delete rankings for the profile
+	res, err := tx.ExecContext(ctx, "DELETE FROM rankings WHERE profile_id = (SELECT id FROM profiles WHERE name = ?)", name)
 	if err != nil {
 		return 0, fmt.Errorf("store: delete profile %q: %w", name, err)
 	}
+
 	deletedRows, err := res.RowsAffected()
+	if err != nil {
+		return 0, fmt.Errorf("store: delete profile %q: %w", name, err)
+	}
+
+	// hard delete profile
+	_, err = tx.ExecContext(ctx, "DELETE FROM profiles WHERE name = ?", name)
 	if err != nil {
 		return 0, fmt.Errorf("store: delete profile %q: %w", name, err)
 	}
