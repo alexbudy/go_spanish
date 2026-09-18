@@ -44,6 +44,22 @@ func (m Model) updateProfileSelect(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.buildDirectionMenu()
 			m.screen = screenDirectionSelect
 		}
+	case "delete":
+		selected := m.profileMenu.selected()
+		if selected.value == exitValue || selected.value == newProfileValue {
+			// can't delete 'exit' or 'new profile' options as they are not profiles
+			m.delProfileErr = "Invalid deletion option selected"
+			m.screen = screenProfileSelect
+			break
+		}
+
+		// fmt.Printf("%+v\n", selected)
+		m.profile = selected.value
+		m.buildDeleteProfileConfirmMenu() // confirm Deletion
+		m.screen = screenDeleteProfileConfirm
+
+		// m.profile = selected.value
+		// m.screen =
 	case "q", "esc":
 		return m, tea.Quit
 	}
@@ -57,7 +73,13 @@ func (m Model) viewProfileSelect() string {
 	b.WriteString(subtleStyle.Render("Practice your Spanish <-> English vocabulary."))
 	b.WriteString("\n\n")
 	b.WriteString(m.profileMenu.view())
-	b.WriteString(helpStyle.Render("\n↑/↓ to navigate • enter to select • q to quit"))
+
+	if m.delProfileErr != "" {
+		b.WriteString("\n")
+		b.WriteString(errorStyle.Render(m.delProfileErr))
+	}
+
+	b.WriteString(helpStyle.Render("\n↑/↓ to navigate • enter to select • q to quit • [DEL] to delete a profile"))
 	return b.String()
 }
 

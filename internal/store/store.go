@@ -210,6 +210,27 @@ func (s *Store) InitProfile(ctx context.Context, name string) (int64, error) {
 	return profileID, tx.Commit()
 }
 
+// DeleteProfile marks a profile as deleted. Possibly delete associated rankings in the future.
+func (s *Store) DeleteProfile(ctx context.Context, name string) (int64, error) {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return 0, fmt.Errorf("store: delete profile: %w", err)
+	}
+	defer tx.Rollback()
+
+	// Mark the profile as deleted
+	res, err := tx.ExecContext(ctx, "UPDATE profiles SET deleted_at = CURRENT_TIMESTAMP WHERE name = ?", name)
+	if err != nil {
+		return 0, fmt.Errorf("store: delete profile %q: %w", name, err)
+	}
+	deletedRows, err := res.RowsAffected()
+	if err != nil {
+		return 0, fmt.Errorf("store: delete profile %q: %w", name, err)
+	}
+
+	return deletedRows, tx.Commit()
+}
+
 // GetProfiles returns up to 3 non-deleted profile names, oldest first.
 func (s *Store) GetProfiles(ctx context.Context) ([]string, error) {
 	rows, err := s.db.QueryContext(ctx,

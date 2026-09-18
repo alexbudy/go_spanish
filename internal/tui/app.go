@@ -18,6 +18,7 @@ type screen int
 const (
 	screenProfileSelect screen = iota
 	screenNewProfile
+	screenDeleteProfileConfirm
 	screenDirectionSelect
 	screenQuizModeSelect
 	screenNumQuestions
@@ -48,6 +49,7 @@ type Model struct {
 
 	newProfileInput textinput.Model
 	newProfileErr   string
+	delProfileErr   string
 
 	directionMenu choiceList
 	quizModeMenu  choiceList
@@ -59,10 +61,10 @@ type Model struct {
 	numOptionsErr   string
 
 	profile  string
-	locale   store.Locale
-	quizMode store.QuizMode
+	locale   store.Locale   // 'es' or 'en'
+	quizMode store.QuizMode // aka difficulty, e.g. 'well_known', 'any', 'least_known'
 
-	quiz       quizState
+	quiz       quizState // state of the current quiz
 	answerMenu choiceList
 }
 
