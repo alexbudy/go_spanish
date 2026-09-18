@@ -52,10 +52,10 @@ type Model struct {
 	newProfileErr   string
 	delProfileErr   string
 
-	deleteProfileConfirmMenu choiceList
-	deleteProfileSpecialWord string // user must type this to confirm deletion
-	specialDeleteWordInput   textinput.Model
-	invalidDeleteWordErr     string
+	deleteProfileConfirmMenu   choiceList
+	deleteProfileSpecialPhrase string // user must type this to confirm deletion
+	specialDeletePhraseInput   textinput.Model
+	invalidDeletePhraseErr     string
 
 	directionMenu choiceList
 	quizModeMenu  choiceList
@@ -96,6 +96,10 @@ func New(s *store.Store) Model {
 	m.numOptionsInput.Placeholder = defaultNumAnswers
 	m.numOptionsInput.SetValue(defaultNumAnswers)
 	m.numOptionsInput.CharLimit = 1
+
+	m.specialDeletePhraseInput = textinput.New()
+	m.specialDeletePhraseInput.Placeholder = "type deletion phrase"
+	m.specialDeletePhraseInput.Width = 50
 
 	m.loadProfiles()
 	return m
@@ -148,8 +152,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.updateNewProfile(msg)
 	case screenDeleteProfileConfirm:
 		return m.updateDeleteProfileConfirm(msg)
-	// case screenDeleteProfileConfirmFinal:
-	// 	return m.updateDeleteProfileConfirm(msg)
+	case screenDeleteProfileConfirmFinal:
+		return m.updateDeleteProfileConfirmFinal(msg)
 	case screenDirectionSelect:
 		return m.updateDirectionSelect(msg)
 	case screenQuizModeSelect:

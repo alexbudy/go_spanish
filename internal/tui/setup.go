@@ -45,7 +45,7 @@ func (m Model) updateDeleteProfileConfirm(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	// Allow deleting by number (1-based)
 	n, err := strconv.Atoi(keyMsg.String())
-	if err == nil && n == 1 || n == 2 { // Add one for the Exit option
+	if err == nil && (n == 1 || n == 2) { // Add one for the Exit option
 		m.profileMenu.cursor = n - 1
 
 		keyMsg = tea.KeyMsg{Type: tea.KeyEnter} // continue as if "enter" was pressed
@@ -58,10 +58,12 @@ func (m Model) updateDeleteProfileConfirm(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.deleteProfileConfirmMenu.down()
 	case "enter":
 		if m.deleteProfileConfirmMenu.selected().value == "yes" {
-			if _, err := m.store.DeleteProfile(m.ctx, m.profile); err != nil {
-				m.fail(err)
-				return m, nil
-			}
+			deletionPhrase := "delete " + m.profile
+
+			m.specialDeletePhraseInput.CharLimit = len(deletionPhrase) + 3 // allow for typing mistakes
+			m.specialDeletePhraseInput.Width = len(deletionPhrase) + 3
+			m.specialDeletePhraseInput.Focus()
+
 			m.screen = screenDeleteProfileConfirmFinal
 		} else {
 			m.screen = screenProfileSelect
@@ -73,24 +75,20 @@ func (m Model) updateDeleteProfileConfirm(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
+// Final confirmation menu, requiring user to type deletion phrase
 func (m Model) viewDeleteProfileConfirmFinal() string {
-	specialDeleteWord := "delete" // word to type to delete profile
+	deletionPhrase := "delete " + m.profile // phrase to type to delete profile
 
 	var b strings.Builder
-	b.WriteString(deleteConfirmStyle.Render("Type "))
-	b.WriteString(deleteConfirmSpecialWordStyle.Render(specialDeleteWord))
-	b.WriteString(deleteConfirmStyle.Render(" to confirm"))
+	b.WriteString(deleteConfirmStyle.Render("Type '"))
+	b.WriteString(deleteConfirmSpecialWordStyle.Render(deletionPhrase))
+	b.WriteString(deleteConfirmStyle.Render("'to confirm deletion"))
 	b.WriteString("\n\n")
-	b.WriteString(m.numQuestionsInput.View())
+	b.WriteString(m.specialDeletePhraseInput.View())
 
-	m.specialDeleteWordInput = textinput.New()
-	m.specialDeleteWordInput.Placeholder = "delete"
-	m.numQuestionsInput.Width = 50 // Ensure full placeholder shown
-	m.numQuestionsInput.CharLimit = len(specialDeleteWord) + 3
-
-	if m.specialDeleteWordInput.Value() != specialDeleteWord {
+	if m.invalidDeletePhraseErr != "" {
 		b.WriteString("\n\n")
-		b.WriteString(errorStyle.Render(m.invalidDeleteWordErr))
+		b.WriteString(errorStyle.Render(m.invalidDeletePhraseErr))
 	}
 
 	b.WriteString(helpStyle.Render("\n\nenter to confirm • esc to go back"))
@@ -98,10 +96,47 @@ func (m Model) viewDeleteProfileConfirmFinal() string {
 }
 
 func (m Model) updateDeleteProfileConfirmFinal(msg tea.Msg) (tea.Model, tea.Cmd) {
-	// TODO: Implement final confirmation for deleting a profile, requiring the user to type 'delete' to confirm.
-	// numOptionsErr to be populated
+	deletionPhrase := "delete " + m.profile
 
-	return m, nil
+	keyMsg, ok := msg.(tea.KeyMsg)
+	if !ok {
+		return m, nil
+	}
+
+	switch keyMsg.String() {
+	case "enter":
+		if m.specialDeletePhraseInput.Value() != deletionPhrase {
+			m.invalidDeletePhraseErr = "Invalid deletion phrase"
+			return m, nil
+		}
+
+		if _, err := m.store.DeleteProfile(m.ctx, m.profile); err != nil {
+			m.fail(err)
+			return m, nil
+		}
+
+		// remove the deleted profile from existing profiles
+		for i, existingProfile := range m.existingProfiles {
+			if existingProfile == m.profile {
+				m.existingProfiles = append(m.existingProfiles[:i], m.existingProfiles[i+1:]...)
+				break
+			}
+		}
+		m.buildProfileMenu() // rebuild profile menu in case using new profile
+		m.screen = screenProfileSelect
+
+		return m, nil
+	case "esc":
+		m.buildProfileMenu() // rebuild profile menu in case using new profile
+		m.screen = screenProfileSelect
+
+		return m, nil
+	}
+
+	var cmd tea.Cmd
+	m.specialDeletePhraseInput, cmd = m.specialDeletePhraseInput.Update(msg)
+
+	return m, cmd
 }
 
 func (m Model) updateDirectionSelect(msg tea.Msg) (tea.Model, tea.Cmd) {
