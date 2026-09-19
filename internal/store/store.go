@@ -305,22 +305,18 @@ WHERE p.name = ?`)
 			placeholders[i] = "?"
 			args = append(args, id)
 		}
-		sb.WriteString(" AND n.id NOT IN (" + strings.Join(placeholders, ",") + ")")
+		sb.WriteString(" AND n.id NOT IN (" + strings.Join(placeholders, ",") + ") ")
 	}
 
 	switch quizMode {
 	case Any:
 		sb.WriteString(" ORDER BY RANDOM() LIMIT ?")
-		args = append(args, numWords)
 	case LeastKnown:
-		sb.WriteString(fmt.Sprintf(" ORDER BY %s ASC LIMIT ?", column))
-		args = append(args, numWords)
+		sb.WriteString(fmt.Sprintf(" ORDER BY %s ASC, RANDOM() LIMIT ?", column))
 	case WellKnown:
-		sb.WriteString(fmt.Sprintf(" ORDER BY %s DESC LIMIT ?", column))
-		args = append(args, numWords)
+		sb.WriteString(fmt.Sprintf(" ORDER BY %s DESC, RANDOM() LIMIT ?", column))
 	}
 
-	sb.WriteString(fmt.Sprintf(" ORDER BY %s ASC, RANDOM() LIMIT ?", column))
 	args = append(args, numWords)
 
 	rows, err := s.db.QueryContext(ctx, sb.String(), args...)
