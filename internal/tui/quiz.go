@@ -32,16 +32,16 @@ type quizState struct {
 }
 
 func (m *Model) startQuiz() error {
-	pool, err := m.store.GetAllWords(m.ctx, m.locale.AnswerLang())
+	pool, err := m.store.GetAllWords(m.ctx)
 	if err != nil {
 		return err
 	}
 	m.quiz = quizState{
-		quizMode:       m.quiz.quizMode,
+		quizMode:       m.quizMode,
 		totalQuestions: m.quiz.totalQuestions,
 		numOptions:     m.quiz.numOptions,
 		index:          1,
-		answerPool:     pool,
+		answerPool:     pool[m.locale.AnswerLang()],
 	}
 	return m.loadNextQuestion()
 }

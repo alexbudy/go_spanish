@@ -241,7 +241,7 @@ func (s *Store) DeleteProfile(ctx context.Context, name string) (int64, error) {
 // GetProfiles returns up to 3 non-deleted profile names, oldest first.
 func (s *Store) GetProfiles(ctx context.Context) ([]string, error) {
 	rows, err := s.db.QueryContext(ctx,
-		"SELECT name FROM profiles WHERE deleted_at IS NULL ORDER BY created_at ASC LIMIT 3")
+		"SELECT name FROM profiles WHERE deleted_at IS NULL ORDER BY created_at ASC LIMIT 8")
 	if err != nil {
 		return nil, fmt.Errorf("store: get profiles: %w", err)
 	}
@@ -260,26 +260,33 @@ func (s *Store) GetProfiles(ctx context.Context) ([]string, error) {
 
 // GetAllWords returns every noun's text in the given language ("en" or "es"),
 // used to build the pool of multiple-choice answers.
-func (s *Store) GetAllWords(ctx context.Context, lang string) ([]string, error) {
+func (s *Store) GetAllWords(ctx context.Context) (map[string][]string, error) {
 	rows, err := s.db.QueryContext(ctx, "SELECT spanish, english FROM nouns")
 	if err != nil {
 		return nil, fmt.Errorf("store: get all words: %w", err)
 	}
 	defer rows.Close()
 
-	var words []string
+	words := map[string][]string{
+		"es": {},
+		"en": {},
+	}
+
 	for rows.Next() {
 		var spanish, english string
 		if err := rows.Scan(&spanish, &english); err != nil {
 			return nil, fmt.Errorf("store: get all words: %w", err)
 		}
-		if lang == "en" {
-			words = append(words, english)
-		} else {
-			words = append(words, spanish)
-		}
+
+		words["en"] = append(words["en"], english)
+		words["es"] = append(words["es"], spanish)
 	}
-	return words, rows.Err()
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("store: get all words: %w", err)
+	}
+
+	return words, nil
 }
 
 // GetWordsForQuestion returns the words for profile in the given
