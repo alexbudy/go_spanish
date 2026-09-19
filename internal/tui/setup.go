@@ -58,10 +58,8 @@ func (m Model) updateDeleteProfileConfirm(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.deleteProfileConfirmMenu.down()
 	case "enter":
 		if m.deleteProfileConfirmMenu.selected().value == "yes" {
-			deletionPhrase := "delete " + m.profile
-
-			m.specialDeletePhraseInput.CharLimit = len(deletionPhrase) + 3 // allow for typing mistakes
-			m.specialDeletePhraseInput.Width = len(deletionPhrase) + 3
+			m.specialDeletePhraseInput.CharLimit = 50 // allow for typing mistakes
+			m.specialDeletePhraseInput.Width = 50
 			m.specialDeletePhraseInput.Focus()
 
 			m.screen = screenDeleteProfileConfirmFinal

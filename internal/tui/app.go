@@ -32,7 +32,8 @@ const (
 )
 
 const (
-	maxProfileSlots = 9 // Limit to 9, so we can allow selecting by number (1-9) in the profile menu.
+	// Limit to 8, so we can allow selecting by number (1-9) in the profile menu (allow 1 for exit).
+	maxProfileSlots = 8
 	newProfileValue = "__new__"
 	exitValue       = "__exit__"
 )
