@@ -47,7 +47,7 @@ func (m *Model) startQuiz() error {
 }
 
 func (m *Model) loadNextQuestion() error {
-	words, err := m.store.GetWordsForQuestion(m.ctx, m.profile, m.quiz.quizMode, m.locale, m.quiz.questionedWordIDs, 10)
+	words, err := m.store.GetWordsForQuestion(m.ctx, m.profile, m.quizMode, m.locale, m.quiz.questionedWordIDs, 10)
 	if err != nil {
 		return err
 	}

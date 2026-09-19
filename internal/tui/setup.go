@@ -180,7 +180,7 @@ func (m Model) updateQuizModeSelect(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 
-	// Allow deleting by number (1-based) - TODO can refactor to avoid duplication with updateDirectionSelect
+	// Allow navigating by number (1-based) - TODO can refactor to avoid duplication with updateDirectionSelect
 	n, err := strconv.Atoi(keyMsg.String())
 	if err == nil && n >= 1 && n <= 4 { // three modes + manage words
 		m.profileMenu.cursor = n - 1
@@ -194,7 +194,12 @@ func (m Model) updateQuizModeSelect(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case "down", "j":
 		m.quizModeMenu.down()
 	case "enter":
-		m.locale = store.Locale(m.directionMenu.selected().value)
+		m.quizMode = store.QuizMode(m.quizModeMenu.selected().value)
+
+		if m.quizModeMenu.selected().value == string(store.ManageWords) {
+			// m.screen = screenManageWords // TODO: implement manage words screen
+			return m, nil
+		}
 
 		m.numQuestionsInput.Focus()
 		m.numQuestionsErr = ""
