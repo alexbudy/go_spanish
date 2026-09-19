@@ -32,7 +32,7 @@ const (
 )
 
 const (
-	maxProfileSlots = 3
+	maxProfileSlots = 9 // Limit to 9, so we can allow selecting by number (1-9) in the profile menu.
 	newProfileValue = "__new__"
 	exitValue       = "__exit__"
 )
@@ -121,9 +121,12 @@ func (m *Model) buildProfileMenu() {
 	for _, name := range m.existingProfiles {
 		items = append(items, choiceItem{label: name, value: name})
 	}
-	for i := len(m.existingProfiles); i < maxProfileSlots; i++ {
+
+	// add one new profile entry for dynamic profile creation
+	if len(m.existingProfiles) < maxProfileSlots {
 		items = append(items, choiceItem{label: "-- new profile --", value: newProfileValue})
 	}
+
 	items = append(items, choiceItem{label: "Exit :(", value: exitValue})
 	m.profileMenu = newChoiceList("Select a profile (or exit)", items)
 }
