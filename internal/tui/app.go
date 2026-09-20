@@ -59,8 +59,9 @@ type Model struct {
 	specialDeletePhraseInput   textinput.Model
 	invalidDeletePhraseErr     string
 
-	directionMenu choiceList
-	quizModeMenu  choiceList
+	directionMenu   choiceList
+	quizModeMenu    choiceList
+	manageWordsMenu choiceList
 
 	numQuestionsInput textinput.Model
 	numQuestionsErr   string
