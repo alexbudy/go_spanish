@@ -63,10 +63,12 @@ func (l Locale) column() (string, error) {
 
 // Word is a single Spanish/English noun pair.
 type Word struct {
-	ID      int64
-	Spanish string
-	English string
-	Gender  string
+	ID          int64
+	Spanish     string
+	English     string
+	Gender      string
+	EsToENScore float64
+	EnToEsScore float64
 }
 
 // Text returns the word's text in the given locale's question language.
@@ -258,28 +260,30 @@ func (s *Store) GetProfiles(ctx context.Context) ([]string, error) {
 	return names, rows.Err()
 }
 
-// GetAllWords returns every noun's text in the given language ("en" or "es"),
+// GetAllWords returns every noun's text in both languages, as well as its rankings into the other direction,
 // used to build the pool of multiple-choice answers.
-func (s *Store) GetAllWords(ctx context.Context) (map[string][]string, error) {
-	rows, err := s.db.QueryContext(ctx, "SELECT spanish, english FROM nouns")
+func (s *Store) GetAllWords(ctx context.Context, profile string) ([]Word, error) {
+	rows, err := s.db.QueryContext(ctx, `
+		SELECT n.spanish, n.english, r.es_to_en, r.en_to_es
+		FROM nouns n
+		INNER JOIN rankings r ON n.id = r.noun_id
+		INNER JOIN profiles p ON p.id = r.profile_id
+		WHERE p.name = ?`, profile)
 	if err != nil {
 		return nil, fmt.Errorf("store: get all words: %w", err)
 	}
 	defer rows.Close()
 
-	words := map[string][]string{
-		"es": {},
-		"en": {},
-	}
+	var words []Word
 
 	for rows.Next() {
-		var spanish, english string
-		if err := rows.Scan(&spanish, &english); err != nil {
+		var word Word
+
+		if err := rows.Scan(&word.English, &word.Spanish, &word.EsToENScore, &word.EnToEsScore); err != nil {
 			return nil, fmt.Errorf("store: get all words: %w", err)
 		}
 
-		words["en"] = append(words["en"], english)
-		words["es"] = append(words["es"], spanish)
+		words = append(words, word)
 	}
 
 	if err := rows.Err(); err != nil {

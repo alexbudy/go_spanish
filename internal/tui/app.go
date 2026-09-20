@@ -22,6 +22,7 @@ const (
 	screenDeleteProfileConfirmFinal // final confirmation, require typing 'delete'
 	screenDirectionSelect
 	screenQuizModeSelect
+	screenManageWords
 	screenNumQuestions
 	screenNumOptions
 	screenQuestion
@@ -162,6 +163,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.updateDirectionSelect(msg)
 	case screenQuizModeSelect:
 		return m.updateQuizModeSelect(msg)
+	// case screenManageWords:
+	// 	return m.updateManageWords(msg) // TODO implement
 	case screenNumQuestions:
 		return m.updateNumQuestions(msg)
 	case screenNumOptions:
@@ -194,6 +197,8 @@ func (m Model) View() string {
 		return m.viewDirectionSelect()
 	case screenQuizModeSelect:
 		return m.viewQuizModeSelect()
+	case screenManageWords:
+		return m.viewManageWords()
 	case screenNumQuestions:
 		return m.viewNumQuestions()
 	case screenNumOptions:

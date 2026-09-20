@@ -214,6 +214,11 @@ func (m Model) viewQuizModeSelect() string {
 	return m.quizModeMenu.view() + helpStyle.Render("\n↑/↓ to navigate • enter to select • esc to go back")
 }
 
+// Manage words screen - show all words, allow for reset, removal (TODO)
+func (m Model) viewManageWords() string {
+	return helpStyle.Render("\n↑/↓ to navigate • enter to select • esc to go back")
+}
+
 func (m Model) updateNumQuestions(msg tea.Msg) (tea.Model, tea.Cmd) {
 	keyMsg, ok := msg.(tea.KeyMsg)
 	if !ok {
