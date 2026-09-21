@@ -101,13 +101,30 @@ func (mwl manageWordsList) view() string {
 			b.WriteString("  ")
 		}
 		wordLine := strconv.FormatInt(item.ID, 10) + ". "
+		var score float64 // how well you know word in given direction
 
 		if mwl.direction == store.En {
-			wordLine += item.English + " -> " + item.Spanish + "\n"
+			wordLine += item.English + " -> " + item.Spanish
+			score = item.EnToEsScore
 		} else {
-			wordLine += item.Spanish + " -> " + item.English + "\n"
+			wordLine += item.Spanish + " -> " + item.English
+			score = item.EsToENScore
 		}
-		b.WriteString(wordLine)
+
+		if score > 1.5 {
+			b.WriteString(knowWordVeryWellStyle.Render(wordLine))
+		} else if score > 0.5 {
+			b.WriteString(knowWordWellStyle.Render(wordLine))
+		} else if score > -0.5 {
+			b.WriteString(knowWordNeutralStyle.Render(wordLine))
+		} else if score > -1.5 {
+			b.WriteString(knowWordPoorlyStyle.Render(wordLine))
+		} else {
+			b.WriteString(knowWordVeryPoorlyStyle.Render(wordLine))
+		}
+
+		b.WriteString("\n")
+
 	}
 
 	// Pages subtext - // offset by 1 since page numbers start at 1, round up when dividing
