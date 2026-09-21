@@ -61,7 +61,7 @@ type Model struct {
 
 	directionMenu   choiceList
 	quizModeMenu    choiceList
-	manageWordsMenu choiceList
+	manageWordsMenu manageWordsList
 
 	numQuestionsInput textinput.Model
 	numQuestionsErr   string
@@ -75,6 +75,8 @@ type Model struct {
 
 	quiz       quizState // state of the current quiz
 	answerMenu choiceList
+
+	allWords []store.Word // slice of all words for current profile (both languages, both rankings)
 }
 
 // New builds the initial Model, loading whatever profiles already exist.
@@ -164,8 +166,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.updateDirectionSelect(msg)
 	case screenQuizModeSelect:
 		return m.updateQuizModeSelect(msg)
-	// case screenManageWords:
-	// 	return m.updateManageWords(msg) // TODO implement
+	case screenManageWords:
+		return m.updateManageWords(msg) // TODO implement
 	case screenNumQuestions:
 		return m.updateNumQuestions(msg)
 	case screenNumOptions:

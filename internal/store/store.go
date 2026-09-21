@@ -39,6 +39,8 @@ type Locale string
 const (
 	EsToEn Locale = "es_to_en"
 	EnToEs Locale = "en_to_es"
+	En     Locale = "en"
+	Es     Locale = "es"
 )
 
 const (
@@ -63,12 +65,12 @@ func (l Locale) column() (string, error) {
 
 // Word is a single Spanish/English noun pair.
 type Word struct {
-	ID          int64
-	Spanish     string
-	English     string
-	Gender      string
-	EsToENScore float64
-	EnToEsScore float64
+	ID          int64   // 1-based ind
+	Spanish     string  // Spanish Word
+	English     string  // English Word
+	Gender      string  // TODO use/implement/delete?
+	EsToENScore float64 // how well the user knows spanish word from english
+	EnToEsScore float64 // how well the user knows english word from spanish
 }
 
 // Text returns the word's text in the given locale's question language.
@@ -279,9 +281,11 @@ func (s *Store) GetAllWords(ctx context.Context, profile string) ([]Word, error)
 	for rows.Next() {
 		var word Word
 
-		if err := rows.Scan(&word.English, &word.Spanish, &word.EsToENScore, &word.EnToEsScore); err != nil {
+		if err := rows.Scan(&word.Spanish, &word.English, &word.EsToENScore, &word.EnToEsScore); err != nil {
 			return nil, fmt.Errorf("store: get all words: %w", err)
 		}
+
+		word.ID = int64(len(words) + 1)
 
 		words = append(words, word)
 	}

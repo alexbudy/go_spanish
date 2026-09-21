@@ -1,0 +1,152 @@
+package tui
+
+import (
+	"strconv"
+	"strings"
+
+	"go_spanish/internal/store"
+
+	tea "github.com/charmbracelet/bubbletea"
+)
+
+/* components needed for word manage screen */
+
+const entriesPerPage = 25
+
+type manageWordsList struct {
+	title     string       // the title for managing words
+	items     []store.Word // all words
+	pageStart int          // 0 base start of words to show
+	cursor    int          // between pageStart and pageEnd, inclusive
+	pageEnd   int          // 0 base end of words to show (TODO - can do without)
+	direction store.Locale // which direction the words are shown in - es ( goes to english) or en ( goes to spanish)
+}
+
+func newManageWordsList(title string, items []store.Word, direction store.Locale) manageWordsList {
+	return manageWordsList{
+		title: title, items: items, pageStart: 0, cursor: 0,
+		pageEnd: entriesPerPage, direction: direction,
+	}
+}
+
+func (mwl *manageWordsList) up() {
+	if mwl.cursor == 0 {
+		return // top of list - do nothing
+	}
+	mwl.cursor--
+
+	if mwl.cursor < mwl.pageStart {
+		mwl.pageStart--
+		mwl.pageEnd--
+	}
+}
+
+func (mwl *manageWordsList) down() {
+	if mwl.cursor >= mwl.pageEnd || mwl.cursor == len(mwl.items)-1 {
+		return // bottom of list - do nothing
+	}
+	mwl.cursor++
+
+	if mwl.cursor >= mwl.pageEnd {
+		mwl.pageStart++
+		mwl.pageEnd++
+	}
+}
+
+// PgUp pressed
+func (mwl *manageWordsList) prevPage() {
+	if mwl.cursor-entriesPerPage < 0 {
+		// top of list - don't move cursor
+		mwl.pageStart = 0
+		mwl.pageEnd = entriesPerPage
+	} else {
+		mwl.pageStart = max(0, mwl.pageStart-entriesPerPage)
+		mwl.cursor -= entriesPerPage
+		mwl.pageEnd -= entriesPerPage
+	}
+}
+
+// PgdDown pressed
+func (mwl *manageWordsList) nextPage() {
+	if mwl.cursor+entriesPerPage > len(mwl.items) {
+		// bottom of list - no scroll
+		return
+	} else {
+		mwl.pageStart += entriesPerPage
+		mwl.cursor += entriesPerPage
+		mwl.pageEnd = mwl.pageStart + entriesPerPage
+	}
+}
+
+func (mwl *manageWordsList) swapDirection() {
+	if mwl.direction == store.En {
+		mwl.direction = store.Es
+	} else {
+		mwl.direction = store.En
+	}
+}
+
+func (mwl manageWordsList) view() string {
+	var b strings.Builder
+	if mwl.title != "" {
+		b.WriteString(promptStyle.Render(mwl.title) + "\n\n")
+	}
+
+	for i := mwl.pageStart; i <= mwl.pageEnd && i < len(mwl.items); i++ {
+		item := mwl.items[i]
+
+		if i == mwl.cursor {
+			b.WriteString(cursorStyle.Render("> "))
+		} else {
+			b.WriteString("  ")
+		}
+		wordLine := strconv.FormatInt(item.ID, 10) + ". "
+
+		if mwl.direction == store.En {
+			wordLine += item.English + " -> " + item.Spanish + "\n"
+		} else {
+			wordLine += item.Spanish + " -> " + item.English + "\n"
+		}
+		b.WriteString(wordLine)
+	}
+
+	// Pages subtext - // offset by 1 since page numbers start at 1, round up when dividing
+	pageCounterSubText := ("Page " + strconv.Itoa((mwl.pageStart/entriesPerPage)+1) +
+		" of " + strconv.Itoa((len(mwl.items)+entriesPerPage-1)/entriesPerPage))
+	b.WriteString(pageCounterStyle.Render(pageCounterSubText))
+
+	return b.String()
+}
+
+// index is start of words to show
+func (m *Model) buildManageWordsMenu() {
+	m.manageWordsMenu = newManageWordsList("Select a word", m.allWords, m.locale)
+}
+
+// Manage words screen - show all words, allow for reset, removal (TODO)
+func (m Model) viewManageWords() string {
+	return m.manageWordsMenu.view() + helpStyle.Render("\n↑/↓ to navigate • enter to select • esc to go back • [PGUP]/[PGDN] to cycle by 10")
+}
+
+func (m Model) updateManageWords(msg tea.Msg) (tea.Model, tea.Cmd) {
+	keyMsg, ok := msg.(tea.KeyMsg)
+	if !ok {
+		return m, nil
+	}
+
+	switch keyMsg.String() {
+	case "up", "k":
+		m.manageWordsMenu.up()
+	case "down", "j":
+		m.manageWordsMenu.down()
+	case "pgup":
+		m.manageWordsMenu.prevPage()
+	case "pgdown":
+		m.manageWordsMenu.nextPage()
+	case "tab":
+		m.manageWordsMenu.swapDirection()
+	case "esc":
+		m.screen = screenQuizModeSelect
+	}
+	return m, nil
+}

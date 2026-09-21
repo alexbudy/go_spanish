@@ -33,13 +33,6 @@ func (m *Model) buildQuizModeMenu() {
 	})
 }
 
-func (m *Model) buildManageWordsMenu() {
-	m.manageWordsMenu = newChoiceList("Select a word", []choiceItem{
-		{label: "Word1", value: string(store.WellKnown)},
-		{label: "Word2", value: string(store.Any)},
-	})
-}
-
 func (m Model) viewDeleteProfileConfirm() string {
 	return m.deleteProfileConfirmMenu.view() + helpStyle.Render("\n↑/↓ to navigate • enter to select • esc to go back")
 }
@@ -185,6 +178,15 @@ func (m Model) updateQuizModeSelect(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 
+	// load all words into model
+	if len(m.allWords) == 0 {
+		wordPool, err := m.store.GetAllWords(m.ctx, m.profile)
+		if err != nil {
+			return m, nil
+		}
+		m.allWords = wordPool
+	}
+
 	// Allow navigating by number (1-based) - TODO can refactor to avoid duplication with updateDirectionSelect
 	n, err := strconv.Atoi(keyMsg.String())
 	if err == nil && n >= 1 && n <= 4 { // three modes + manage words
@@ -220,11 +222,6 @@ func (m Model) updateQuizModeSelect(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m Model) viewQuizModeSelect() string {
 	return m.quizModeMenu.view() + helpStyle.Render("\n↑/↓ to navigate • enter to select • esc to go back")
-}
-
-// Manage words screen - show all words, allow for reset, removal (TODO)
-func (m Model) viewManageWords() string {
-	return m.manageWordsMenu.view() + helpStyle.Render("\n↑/↓ to navigate • enter to select • esc to go back")
 }
 
 func (m Model) updateNumQuestions(msg tea.Msg) (tea.Model, tea.Cmd) {

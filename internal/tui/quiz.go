@@ -32,17 +32,13 @@ type quizState struct {
 }
 
 func (m *Model) startQuiz() error {
-	wordPool, err := m.store.GetAllWords(m.ctx, m.profile)
-	if err != nil {
-		return err
-	}
-	answerPool := make([]string, 0, len(wordPool))
+	answerPool := make([]string, 0, len(m.allWords))
 
-	for _, w := range wordPool {
+	for _, w := range m.allWords {
 		if m.locale == store.EsToEn {
-			answerPool = append(answerPool, w.Spanish)
-		} else {
 			answerPool = append(answerPool, w.English)
+		} else {
+			answerPool = append(answerPool, w.Spanish)
 		}
 	}
 

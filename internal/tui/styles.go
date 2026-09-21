@@ -15,7 +15,9 @@ var (
 	promptStyleProfile     = lipgloss.NewStyle().Bold(true).Italic(true)
 
 	// Deletion confirmation styles for emphasis
-	deleteConfirmStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("196"))
-	// deleteConfirmSpecialWordStyle = lipgloss.NewStyle().Italic(true).Foreground(lipgloss.Color("196"))
+	deleteConfirmStyle            = lipgloss.NewStyle().Foreground(lipgloss.Color("196"))
 	deleteConfirmSpecialWordStyle = lipgloss.NewStyle().Italic(true).Foreground(lipgloss.Color("196"))
+
+	// Page counter styles
+	pageCounterStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("247")).MarginTop(1)
 )
