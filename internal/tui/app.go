@@ -81,8 +81,10 @@ func (m *Model) buildProfileMenu() {
 		items = append(items, choiceItem{label: name, value: name})
 	}
 
-	// add a visual line break to the last element
-	items[len(items)-1].label += "\n    ----------"
+	// add a visual line break to the last element, if it exists
+	if len(items) > 0 {
+		items[len(items)-1].label += "\n    ----------"
+	}
 
 	// add one new profile entry for dynamic profile creation
 	if len(m.existingProfiles) < maxProfileSlots {

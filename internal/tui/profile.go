@@ -44,7 +44,7 @@ func (m Model) updateProfileSelect(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.buildDirectionMenu()
 			m.screen = screenDirectionSelect
 		}
-	case "delete": // DEL was pressed
+	case "delete", "d": // DEL was pressed
 		selected := m.profileMenu.selected()
 		if selected.value == exitValue || selected.value == newProfileValue {
 			// can't delete 'exit' or 'new profile' options as they are not profiles
@@ -75,7 +75,7 @@ func (m Model) viewProfileSelect() string {
 		b.WriteString(errorStyle.Render(m.delProfileErr))
 	}
 
-	b.WriteString(helpStyle.Render("\n↑/↓ to navigate • enter to select • [DEL] to delete a profile • q to quit"))
+	b.WriteString(helpStyle.Render("\n↑/↓ to navigate • enter to select • [DEL]/'d' to delete a profile • q to quit"))
 	return b.String()
 }
 
