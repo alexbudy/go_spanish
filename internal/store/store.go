@@ -69,7 +69,7 @@ type Word struct {
 	Spanish     string  // Spanish Word
 	English     string  // English Word
 	Gender      string  // TODO use/implement/delete?
-	EsToENScore float64 // how well the user knows spanish word from english
+	EsToEnScore float64 // how well the user knows spanish word from english
 	EnToEsScore float64 // how well the user knows english word from spanish
 }
 
@@ -281,7 +281,7 @@ func (s *Store) GetAllWords(ctx context.Context, profile string) ([]Word, error)
 	for rows.Next() {
 		var word Word
 
-		if err := rows.Scan(&word.Spanish, &word.English, &word.EsToENScore, &word.EnToEsScore); err != nil {
+		if err := rows.Scan(&word.Spanish, &word.English, &word.EsToEnScore, &word.EnToEsScore); err != nil {
 			return nil, fmt.Errorf("store: get all words: %w", err)
 		}
 

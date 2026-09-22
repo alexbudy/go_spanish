@@ -120,7 +120,7 @@ func (mwl manageWordsList) view() string {
 			score = item.EnToEsScore
 		} else {
 			wordLine += item.Spanish + " -> " + item.English
-			score = item.EsToENScore
+			score = item.EsToEnScore
 		}
 
 		b.WriteString(scoreToKnowledgeLevelStyle(score).Render(wordLine))

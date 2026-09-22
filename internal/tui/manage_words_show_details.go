@@ -36,7 +36,7 @@ func (wd *wordDetails) resetScore() {
 		wd.word.EnToEsScore = 0
 		wd.wordUpdateMsg = "Reset score for '" + wd.word.English + "' <-> '" + wd.word.Spanish + "'"
 	} else {
-		wd.word.EsToENScore = 0
+		wd.word.EsToEnScore = 0
 		wd.wordUpdateMsg = "Reset score for '" + wd.word.Spanish + "' <-> '" + wd.word.English + "'"
 	}
 }
@@ -50,15 +50,15 @@ func (wd wordDetails) view() string {
 
 	if wd.selected == store.En {
 		b.WriteString(cursorStyle.Render("> "))
-		b.WriteString(scoreToKnowledgeLevelStyle(wd.word.EnToEsScore).Render(wd.word.English + " -> " + wd.word.Spanish + ": " + strconv.Itoa(int(wd.word.EnToEsScore))))
+		b.WriteString(scoreToKnowledgeLevelStyle(wd.word.EnToEsScore).Render(wd.word.English + " -> " + wd.word.Spanish + ": " + strconv.FormatFloat(wd.word.EnToEsScore, 'f', 2, 64)))
 		b.WriteString("\n")
-		b.WriteString(scoreToKnowledgeLevelStyle(wd.word.EsToENScore).Render("  " + wd.word.Spanish + " -> " + wd.word.English + ": " + strconv.Itoa(int(wd.word.EsToENScore))))
+		b.WriteString(scoreToKnowledgeLevelStyle(wd.word.EsToEnScore).Render("  " + wd.word.Spanish + " -> " + wd.word.English + ": " + strconv.FormatFloat(wd.word.EsToEnScore, 'f', 2, 64)))
 		b.WriteString("\n")
 	} else {
-		b.WriteString(scoreToKnowledgeLevelStyle(wd.word.EnToEsScore).Render("  " + wd.word.English + " -> " + wd.word.Spanish + ": " + strconv.Itoa(int(wd.word.EnToEsScore))))
+		b.WriteString(scoreToKnowledgeLevelStyle(wd.word.EnToEsScore).Render("  " + wd.word.English + " -> " + wd.word.Spanish + ": " + strconv.FormatFloat(wd.word.EnToEsScore, 'f', 2, 64)))
 		b.WriteString("\n")
 		b.WriteString(cursorStyle.Render("> "))
-		b.WriteString(scoreToKnowledgeLevelStyle(wd.word.EsToENScore).Render(wd.word.Spanish + " -> " + wd.word.English + ": " + strconv.Itoa(int(wd.word.EsToENScore))))
+		b.WriteString(scoreToKnowledgeLevelStyle(wd.word.EsToEnScore).Render(wd.word.Spanish + " -> " + wd.word.English + ": " + strconv.FormatFloat(wd.word.EsToEnScore, 'f', 2, 64)))
 		b.WriteString("\n")
 	}
 
