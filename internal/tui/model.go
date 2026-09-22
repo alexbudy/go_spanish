@@ -37,10 +37,14 @@ type Model struct {
 	specialDeletePhraseInput   textinput.Model
 	invalidDeletePhraseErr     string
 
-	directionMenu   choiceList
-	quizModeMenu    choiceList
-	manageWordsMenu manageWordsList
-	wordDetailsMenu wordDetails
+	directionMenu choiceList
+	quizModeMenu  choiceList
+
+	manageWordsMenu                  manageWordsList
+	manageWordsNumberInput           string // allow for multi digit number input
+	manageWordsNumberInputGeneration int
+
+	wordDetailsMenu wordDetails // menu for the word details menu
 
 	numQuestionsInput textinput.Model
 	numQuestionsErr   string

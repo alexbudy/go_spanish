@@ -3,6 +3,7 @@ package tui
 import (
 	"strconv"
 	"strings"
+	"time"
 
 	"go_spanish/internal/store"
 
@@ -20,6 +21,18 @@ type manageWordsList struct {
 	cursor    int          // between pageStart and pageEnd, inclusive
 	pageEnd   int          // 0 base end of words to show (TODO - can do without)
 	direction store.Locale // which direction the words are shown in - es ( goes to english) or en ( goes to spanish)
+}
+
+type numberInputTimeoutMsg struct {
+	generation int
+}
+
+func numberInputTimeout(generation int) tea.Cmd {
+	return tea.Tick(400*time.Millisecond, func(time.Time) tea.Msg {
+		return numberInputTimeoutMsg{
+			generation: generation,
+		}
+	})
 }
 
 func newManageWordsList(title string, items []store.Word, direction store.Locale) manageWordsList {
@@ -144,35 +157,86 @@ func (m *Model) buildManageWordsMenu() {
 
 // Manage words screen - show all words, allow for reset, removal (TODO)
 func (m Model) viewManageWords() string {
-	return m.manageWordsMenu.view() + helpStyle.Render("\n↑/↓ to navigate • enter to select • esc to go back • [PGUP]/[PGDN/HOME/END] to page by "+strconv.Itoa(entriesPerPage)+" words • [TAB] to swap direction")
+	return m.manageWordsMenu.view() + helpStyle.Render("\n↑/↓ to navigate • enter to select • esc to go back • [PGUP/PGDN/HOME/END] to page by "+strconv.Itoa(entriesPerPage)+" words • [TAB] to swap direction")
 }
 
 func (m Model) updateManageWords(msg tea.Msg) (tea.Model, tea.Cmd) {
-	keyMsg, ok := msg.(tea.KeyMsg)
-	if !ok {
-		return m, nil
-	}
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "up", "k":
+			m.manageWordsMenu.up()
+		case "down", "j":
+			m.manageWordsMenu.down()
+		case "pgup":
+			m.manageWordsMenu.prevPage()
+		case "pgdown":
+			m.manageWordsMenu.nextPage()
+		case "home":
+			m.manageWordsMenu.first()
+		case "end":
+			m.manageWordsMenu.last()
+		case "tab":
+			m.manageWordsMenu.swapDirection()
+		case "enter":
+			m.buildWordDetailsMenu() // build the detail menu
+			m.screen = screenWordDetails
+		case "esc":
+			m.screen = screenQuizModeSelect
+		default:
+			// Check if the user pressed a number
+			if len(msg.Runes) == 1 &&
+				msg.Runes[0] >= '0' &&
+				msg.Runes[0] <= '9' {
 
-	switch keyMsg.String() {
-	case "up", "k":
-		m.manageWordsMenu.up()
-	case "down", "j":
-		m.manageWordsMenu.down()
-	case "pgup":
-		m.manageWordsMenu.prevPage()
-	case "pgdown":
-		m.manageWordsMenu.nextPage()
-	case "home":
-		m.manageWordsMenu.first()
-	case "end":
-		m.manageWordsMenu.last()
-	case "tab":
-		m.manageWordsMenu.swapDirection()
-	case "enter":
-		m.buildWordDetailsMenu() // build the detail menu
-		m.screen = screenWordDetails
-	case "esc":
-		m.screen = screenQuizModeSelect
+				m.manageWordsNumberInput += string(msg.Runes)
+
+				// Only allow 2 digits
+				if len(m.manageWordsNumberInput) > 2 {
+					m.manageWordsNumberInput = ""
+					m.manageWordsNumberInputGeneration++
+					return m, nil
+				}
+
+				// This is a new generation.
+				m.manageWordsNumberInputGeneration++
+
+				generation := m.manageWordsNumberInputGeneration
+
+				// Start a timer for this generation.
+				return m, numberInputTimeout(generation)
+			}
+		}
+	case numberInputTimeoutMsg:
+		// Ignore old timer
+		if msg.generation != m.manageWordsNumberInputGeneration {
+			return m, nil
+		}
+
+		if m.manageWordsNumberInput == "" {
+			return m, nil
+		}
+
+		n, err := strconv.Atoi(m.manageWordsNumberInput)
+		if err != nil {
+			m.manageWordsNumberInput = ""
+			return m, nil
+		}
+
+		if n >= 1 && n <= len(m.manageWordsMenu.items) {
+			m.manageWordsMenu.cursor = n - 1
+
+			// Keep selected item visible.
+			if m.manageWordsMenu.cursor < m.manageWordsMenu.pageStart {
+				m.manageWordsMenu.pageStart = m.manageWordsMenu.cursor
+			}
+
+			if m.manageWordsMenu.cursor > m.manageWordsMenu.pageEnd {
+				m.manageWordsMenu.pageEnd = m.manageWordsMenu.cursor
+			}
+		}
+
+		m.manageWordsNumberInput = ""
 	}
 
 	return m, nil

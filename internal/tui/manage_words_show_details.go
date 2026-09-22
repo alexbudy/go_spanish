@@ -77,7 +77,7 @@ func (m *Model) buildWordDetailsMenu() {
 
 // Manage words screen - show all words, allow for reset, removal (TODO?)
 func (m Model) viewWordDetails() string {
-	return m.wordDetailsMenu.view() + helpStyle.Render("\n ↑/↓ to navigate • esc to go back • ctrl+r to reset score")
+	return m.wordDetailsMenu.view() + helpStyle.Render("\n ↑/↓ to navigate • esc to go back • ctrl+r to reset selected score")
 }
 
 func (m Model) updateWordDetails(msg tea.Msg) (tea.Model, tea.Cmd) {
