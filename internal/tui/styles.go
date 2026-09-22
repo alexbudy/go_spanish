@@ -24,7 +24,7 @@ var (
 	// Manage Words styles
 	knowWordVeryWellStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("41"))
 	knowWordWellStyle       = lipgloss.NewStyle().Foreground(lipgloss.Color("114"))
-	knowWordNeutralStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("252505"))
+	knowWordNeutralStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("247"))
 	knowWordPoorlyStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color("196"))
 	knowWordVeryPoorlyStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("124"))
 )

@@ -78,6 +78,18 @@ func (mwl *manageWordsList) nextPage() {
 	}
 }
 
+func (mwl *manageWordsList) first() {
+	mwl.pageStart = 0
+	mwl.cursor = 0
+	mwl.pageEnd = entriesPerPage
+}
+
+func (mwl *manageWordsList) last() {
+	mwl.pageStart = len(mwl.items) - entriesPerPage
+	mwl.cursor = len(mwl.items) - 1
+	mwl.pageEnd = len(mwl.items)
+}
+
 func (mwl *manageWordsList) swapDirection() {
 	if mwl.direction == store.En {
 		mwl.direction = store.Es
@@ -111,17 +123,7 @@ func (mwl manageWordsList) view() string {
 			score = item.EsToENScore
 		}
 
-		if score > 1.5 {
-			b.WriteString(knowWordVeryWellStyle.Render(wordLine))
-		} else if score > 0.5 {
-			b.WriteString(knowWordWellStyle.Render(wordLine))
-		} else if score > -0.5 {
-			b.WriteString(knowWordNeutralStyle.Render(wordLine))
-		} else if score > -1.5 {
-			b.WriteString(knowWordPoorlyStyle.Render(wordLine))
-		} else {
-			b.WriteString(knowWordVeryPoorlyStyle.Render(wordLine))
-		}
+		b.WriteString(scoreToKnowledgeLevelStyle(score).Render(wordLine))
 
 		b.WriteString("\n")
 
@@ -142,7 +144,7 @@ func (m *Model) buildManageWordsMenu() {
 
 // Manage words screen - show all words, allow for reset, removal (TODO)
 func (m Model) viewManageWords() string {
-	return m.manageWordsMenu.view() + helpStyle.Render("\n↑/↓ to navigate • enter to select • esc to go back • [PGUP]/[PGDN] to cycle by 10")
+	return m.manageWordsMenu.view() + helpStyle.Render("\n↑/↓ to navigate • enter to select • esc to go back • [PGUP]/[PGDN/HOME/END] to page by "+strconv.Itoa(entriesPerPage)+" words • [TAB] to swap direction")
 }
 
 func (m Model) updateManageWords(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -160,10 +162,18 @@ func (m Model) updateManageWords(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.manageWordsMenu.prevPage()
 	case "pgdown":
 		m.manageWordsMenu.nextPage()
+	case "home":
+		m.manageWordsMenu.first()
+	case "end":
+		m.manageWordsMenu.last()
 	case "tab":
 		m.manageWordsMenu.swapDirection()
+	case "enter":
+		m.buildWordDetailsMenu() // build the detail menu
+		m.screen = screenWordDetails
 	case "esc":
 		m.screen = screenQuizModeSelect
 	}
+
 	return m, nil
 }

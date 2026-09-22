@@ -23,6 +23,7 @@ const (
 	screenDirectionSelect
 	screenQuizModeSelect
 	screenManageWords
+	screenWordDetails // show details of a selected word
 	screenNumQuestions
 	screenNumOptions
 	screenQuestion
@@ -62,6 +63,7 @@ type Model struct {
 	directionMenu   choiceList
 	quizModeMenu    choiceList
 	manageWordsMenu manageWordsList
+	wordDetailsMenu wordDetails
 
 	numQuestionsInput textinput.Model
 	numQuestionsErr   string
@@ -127,9 +129,12 @@ func (m *Model) buildProfileMenu() {
 		items = append(items, choiceItem{label: name, value: name})
 	}
 
+	// add a visual line break to the last element
+	items[len(items)-1].label += "\n    ----------"
+
 	// add one new profile entry for dynamic profile creation
 	if len(m.existingProfiles) < maxProfileSlots {
-		items = append(items, choiceItem{label: "-- new profile --", value: newProfileValue})
+		items = append(items, choiceItem{label: "New Profile", value: newProfileValue})
 	}
 
 	items = append(items, choiceItem{label: "Exit :(", value: exitValue})
@@ -167,7 +172,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case screenQuizModeSelect:
 		return m.updateQuizModeSelect(msg)
 	case screenManageWords:
-		return m.updateManageWords(msg) // TODO implement
+		return m.updateManageWords(msg)
+	case screenWordDetails:
+		return m.updateWordDetails(msg)
 	case screenNumQuestions:
 		return m.updateNumQuestions(msg)
 	case screenNumOptions:
@@ -202,6 +209,8 @@ func (m Model) View() string {
 		return m.viewQuizModeSelect()
 	case screenManageWords:
 		return m.viewManageWords()
+	case screenWordDetails:
+		return m.viewWordDetails()
 	case screenNumQuestions:
 		return m.viewNumQuestions()
 	case screenNumOptions:
