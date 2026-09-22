@@ -373,3 +373,23 @@ func (s *Store) UpdateRankingForWord(ctx context.Context, wordID int64, locale L
 	}
 	return nil
 }
+
+// ResetRankingForWord resets a word's ranking to zero for the given profile and locale.
+// wordID is 1-based id of word
+func (s *Store) ResetRankingForWord(ctx context.Context, wordID int64, locale Locale, profile string) error {
+	column, err := locale.column()
+	if err != nil {
+		return err
+	}
+
+	var profileID int64
+	if err := s.db.QueryRowContext(ctx, "SELECT id FROM profiles WHERE name = ?", profile).Scan(&profileID); err != nil {
+		return fmt.Errorf("store: update ranking: lookup profile %q: %w", profile, err)
+	}
+
+	query := fmt.Sprintf("UPDATE rankings SET %s = 0.0 WHERE profile_id = ? AND noun_id = ?", column)
+	if _, err := s.db.ExecContext(ctx, query, profileID, wordID); err != nil {
+		return fmt.Errorf("store: update ranking: %w", err)
+	}
+	return nil
+}
