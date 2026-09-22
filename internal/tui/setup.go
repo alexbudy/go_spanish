@@ -25,7 +25,16 @@ func (m *Model) buildDeleteProfileConfirmMenu() {
 }
 
 func (m *Model) buildQuizModeMenu() {
-	m.quizModeMenu = newChoiceList("Select a quiz mode", []choiceItem{
+	b := strings.Builder{}
+	b.WriteString("Select a quiz mode for ")
+
+	if m.locale == store.EsToEn {
+		b.WriteString("Spanish -> English translations \n")
+	} else {
+		b.WriteString("English -> Spanish translations\n")
+	}
+
+	m.quizModeMenu = newChoiceList(b.String(), []choiceItem{
 		{label: "Profile's well-known words", value: string(store.WellKnown)},
 		{label: "Any words", value: string(store.Any)},
 		{label: "Profile's least-known words\n     ----------", value: string(store.LeastKnown)},

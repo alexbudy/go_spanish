@@ -104,10 +104,10 @@ func (mwl *manageWordsList) last() {
 }
 
 func (mwl *manageWordsList) swapDirection() {
-	if mwl.direction == store.En {
-		mwl.direction = store.Es
+	if mwl.direction == store.EnToEs {
+		mwl.direction = store.EsToEn
 	} else {
-		mwl.direction = store.En
+		mwl.direction = store.EnToEs
 	}
 }
 
@@ -128,7 +128,7 @@ func (mwl manageWordsList) view() string {
 		wordLine := strconv.FormatInt(item.ID, 10) + ". "
 		var score float64 // how well you know word in given direction
 
-		if mwl.direction == store.En {
+		if mwl.direction == store.EnToEs {
 			wordLine += item.English + " -> " + item.Spanish
 			score = item.EnToEsScore
 		} else {
