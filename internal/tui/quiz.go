@@ -80,7 +80,15 @@ func (m *Model) loadNextQuestion() error {
 	m.quiz.correctAnswer = correct
 	title := fmt.Sprintf("%d/%d Please select the translation for %q", m.quiz.index, m.quiz.totalQuestions, targetText)
 	m.answerMenu = newChoiceList(title, labeledItems(answerSet...))
+
+	// speak the word once when showing new word
+	go func() {
+		if err := speakSpanishWord(targetText); err != nil {
+		}
+	}()
+
 	m.screen = screenQuestion
+
 	return nil
 }
 
@@ -177,7 +185,10 @@ func (m Model) viewFeedback() string {
 	if m.quiz.wasCorrect {
 		b.WriteString(successStyle.Render("Correct!"))
 	} else {
-		b.WriteString(errorStyle.Render(fmt.Sprintf("Wrong! You selected %q, the correct answer was %q.", m.quiz.selectedAnswer, m.quiz.correctAnswer)))
+		b.WriteString(errorStyle.Render(
+			fmt.Sprintf("Wrong! For %q, you selected %q, the correct answer was %q.",
+				m.quiz.targetText, m.quiz.selectedAnswer, m.quiz.correctAnswer),
+		))
 	}
 	b.WriteString(helpStyle.Render("\n\npress enter to continue"))
 	return b.String()
