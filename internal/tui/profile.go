@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"unicode"
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
@@ -59,7 +58,17 @@ func (m Model) updateProfileSelect(msg tea.Msg) (tea.Model, tea.Cmd) {
 	n, err := strconv.Atoi(keyMsg.String())
 	if err == nil { // 1-9 was pressed
 		if n >= 1 && n <= len(m.profileMenu.items) {
-			m.profileMenu.cursor = n - 1
+			selectableNumber := 0
+
+			for i, item := range m.profileMenu.items {
+				if !item.selectable {
+					continue
+				}
+				selectableNumber++
+				if selectableNumber == n {
+					m.profileMenu.cursor = i
+				}
+			}
 		}
 	}
 
@@ -145,16 +154,26 @@ func (m Model) viewProfileSelect() string {
 	return b.String()
 }
 
-func isAlnum(s string) bool {
-	if s == "" {
-		return false
-	}
-	for _, r := range s {
-		if !unicode.IsLetter(r) && !unicode.IsDigit(r) {
+// has at least one char or int, spaces, _, - valid
+func isValidProfileName(name string) bool {
+	hasLetterOrNumber := false
+
+	for _, r := range name {
+		switch {
+		case r >= 'a' && r <= 'z':
+			hasLetterOrNumber = true
+		case r >= 'A' && r <= 'Z':
+			hasLetterOrNumber = true
+		case r >= '0' && r <= '9':
+			hasLetterOrNumber = true
+		case r == ' ' || r == '_' || r == '-':
+			// valid characters
+		default:
 			return false
 		}
 	}
-	return true
+
+	return hasLetterOrNumber
 }
 
 func (m *Model) profileNameTaken(name string) bool {
@@ -186,7 +205,7 @@ func (m Model) updateNewProfile(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case m.profileNameTaken(name):
 			m.newProfileErr = fmt.Sprintf("Profile %s already exists, please enter a unique one", name)
 			return m, nil
-		case !isAlnum(name):
+		case !isValidProfileName(name):
 			m.newProfileErr = "Invalid profile name, please try again"
 			return m, nil
 		}

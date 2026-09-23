@@ -12,15 +12,15 @@ import (
 
 func (m *Model) buildDirectionMenu() {
 	m.directionMenu = newChoiceList("Select a training direction", []choiceItem{
-		{label: "Provide spanish words, select english words", value: string(store.EsToEn)},
-		{label: "Provide english words, select spanish words", value: string(store.EnToEs)},
+		newChoiceItem("Provide spanish words, select english words", string(store.EsToEn)),
+		newChoiceItem("Provide english words, select spanish words", string(store.EnToEs)),
 	})
 }
 
 func (m *Model) buildDeleteProfileConfirmMenu() {
 	m.deleteProfileConfirmMenu = newChoiceList("Are you sure you want to delete this profile?", []choiceItem{
-		{label: "Yes, delete this profile (cannot be undone)", value: "yes"},
-		{label: "No, go back", value: "no"},
+		newChoiceItem("Yes, delete this profile (cannot be undone)", "yes"),
+		newChoiceItem("No, go back", "no"),
 	})
 }
 
@@ -35,10 +35,11 @@ func (m *Model) buildQuizModeMenu() {
 	}
 
 	m.quizModeMenu = newChoiceList(b.String(), []choiceItem{
-		{label: "Profile's well-known words", value: string(store.WellKnown)},
-		{label: "Any words", value: string(store.Any)},
-		{label: "Profile's least-known words\n     ----------", value: string(store.LeastKnown)},
-		{label: "Manage words", value: string(store.ManageWords)},
+		newChoiceItem("Profile's well-known words", string(store.WellKnown)),
+		newChoiceItem("Any words", string(store.Any)),
+		newChoiceItem("Profile's least-known words", string(store.LeastKnown)),
+		newSeparatorItem(),
+		newChoiceItem("Manage words", string(store.ManageWords)),
 	})
 }
 
@@ -210,6 +211,20 @@ func (m Model) updateQuizModeSelect(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case "down", "j":
 		m.quizModeMenu.down()
 	case "enter":
+		selectableNumber := 0
+
+		for i, item := range m.quizModeMenu.items {
+			if !item.selectable {
+				continue
+			}
+
+			selectableNumber++
+
+			if selectableNumber == n {
+				m.quizModeMenu.cursor = i
+			}
+		}
+
 		m.quizMode = store.QuizMode(m.quizModeMenu.selected().value)
 
 		if m.quizModeMenu.selected().value == string(store.ManageWords) {

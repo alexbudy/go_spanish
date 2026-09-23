@@ -7,10 +7,24 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 )
 
+const linebreak = "     ---------" // visual line break
+
 // choiceItem is a single selectable entry in a choiceList.
 type choiceItem struct {
-	label string
-	value string
+	label      string
+	value      string
+	selectable bool // is this item selectable or not
+}
+
+func newChoiceItem(label, value string) choiceItem {
+	return choiceItem{label: label, value: value, selectable: true}
+}
+
+func newSeparatorItem() choiceItem {
+	return choiceItem{
+		label:      linebreak,
+		selectable: false,
+	}
 }
 
 // choiceList is a small carousel-style menu: up/down (with wraparound) moves
@@ -33,9 +47,17 @@ func (c *choiceList) up() {
 	if len(c.items) == 0 {
 		return
 	}
-	c.cursor--
-	if c.cursor < 0 {
-		c.cursor = len(c.items) - 1
+
+	for {
+		c.cursor--
+
+		if c.cursor < 0 {
+			c.cursor = len(c.items) - 1
+		}
+
+		if c.items[c.cursor].selectable {
+			return
+		}
 	}
 }
 
@@ -43,7 +65,12 @@ func (c *choiceList) down() {
 	if len(c.items) == 0 {
 		return
 	}
-	c.cursor = (c.cursor + 1) % len(c.items)
+	for {
+		c.cursor = (c.cursor + 1) % len(c.items)
+		if c.items[c.cursor].selectable {
+			return
+		}
+	}
 }
 
 func (c choiceList) selected() choiceItem {
@@ -62,27 +89,26 @@ func (c choiceList) view(profile ...string) string {
 
 		b.WriteString("\n\n")
 	}
+
+	number := 1
 	for i, item := range c.items {
+		if item.selectable == false { // new line entries should be skipped
+			b.WriteString(item.label + "\n")
+			continue
+		}
+
+		itemIdxToDisplay := strconv.Itoa(number) + ". "
+		number++
 		if i == c.cursor {
 			if i == c.renameIndex && c.renameInput != nil {
-				b.WriteString(selectedStyle.Render("> " + strconv.Itoa(i+1) + ". "))
+				b.WriteString(selectedStyle.Render("> " + itemIdxToDisplay))
 				b.WriteString(c.renameInput.View())
 			} else {
 				b.WriteString(cursorStyle.Render("> "))
-
-				lines := strings.Split(item.label, "\n")
-				b.WriteString(selectedStyle.Render(strconv.Itoa(i+1) + ". " + lines[0]))
-
-				// add secondary lines as part of selection, but with a different style so they don't compete with the primary line
-				if len(lines) > 1 {
-					for _, l := range lines[1:] {
-						b.WriteString("\n")
-						b.WriteString(selectedStyleSecondary.Render(l))
-					}
-				}
+				b.WriteString(selectedStyle.Render(itemIdxToDisplay + item.label))
 			}
 		} else {
-			b.WriteString("  " + strconv.Itoa(i+1) + ". ")
+			b.WriteString("  " + itemIdxToDisplay)
 			b.WriteString(item.label)
 		}
 		b.WriteString("\n")

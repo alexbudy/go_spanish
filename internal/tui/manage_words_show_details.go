@@ -48,8 +48,11 @@ func (wd *wordDetails) resetScore(ctx context.Context, s *store.Store) store.Wor
 
 func (wd wordDetails) view() string {
 	var b strings.Builder
-
-	b.WriteString("Word Details for '" + wd.word.English + "' <-> '" + wd.word.Spanish + "'\n")
+	if wd.selected == store.EnToEs {
+		b.WriteString("Word Details for '" + wd.word.English + "' <-> '" + wd.word.Spanish + "'\n")
+	} else {
+		b.WriteString("Word Details for '" + wd.word.Spanish + "' <-> '" + wd.word.English + "'\n")
+	}
 
 	b.WriteString("ID: " + strconv.FormatInt(wd.word.ID, 10) + "\n")
 
@@ -77,12 +80,12 @@ func (wd wordDetails) view() string {
 
 // index is start of words to show
 func (m *Model) buildWordDetailsMenu() {
-	m.wordDetailsMenu = newWordDetails("Word Details for ", m.manageWordsMenu.items[m.manageWordsMenu.cursor], store.EnToEs, m.profile) // default to English 'from' selection
+	m.wordDetailsMenu = newWordDetails("Word Details for ", m.manageWordsMenu.items[m.manageWordsMenu.cursor], m.manageWordsMenu.direction, m.profile) // default to English 'from' selection
 }
 
 // Manage words screen - show all words, allow for reset, removal (TODO?)
 func (m Model) viewWordDetails() string {
-	return m.wordDetailsMenu.view() + helpStyle.Render("\n ↑/↓ to navigate • esc to go back • ctrl+r to reset selected score")
+	return m.wordDetailsMenu.view() + helpStyle.Render("\n ↑/↓ to navigate • esc to go back • tab to pronounce • ctrl+r to reset selected score")
 }
 
 func (m Model) updateWordDetails(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -94,6 +97,23 @@ func (m Model) updateWordDetails(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch keyMsg.String() {
 	case "up", "k", "down", "j":
 		m.wordDetailsMenu.toggleSelectedLocale()
+	case "tab":
+		// pronounce both words - TODO - cleaner way to do this?
+		if m.wordDetailsMenu.selected == store.EnToEs {
+			go func() {
+				_ = speak(m.wordDetailsMenu.word.English, store.EnToEs)
+				go func() {
+					_ = speak(m.wordDetailsMenu.word.Spanish, store.EsToEn)
+				}()
+			}()
+		} else {
+			go func() {
+				_ = speak(m.wordDetailsMenu.word.Spanish, store.EsToEn)
+				go func() {
+					_ = speak(m.wordDetailsMenu.word.English, store.EnToEs)
+				}()
+			}()
+		}
 	case "ctrl+r":
 		updatedWord := m.wordDetailsMenu.resetScore(m.ctx, m.store)
 

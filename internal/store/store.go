@@ -109,6 +109,33 @@ func (s *Store) EnsureSchema(ctx context.Context) error {
 			return fmt.Errorf("store: ensure schema: %w", err)
 		}
 	}
+
+	if err := s.migrate(ctx); err != nil {
+	}
+	return nil
+}
+
+func (s *Store) migrate(ctx context.Context) error {
+	var exists int
+	err := s.db.QueryRowContext(ctx, `
+		SELECT COUNT(*)
+		FROM pragma_table_info('rankings')
+		WHERE name = 'profiles'
+	`).Scan(&exists)
+	if err != nil {
+		return fmt.Errorf("store: check some_new_column: %w", err)
+	}
+
+	if exists == 0 {
+		// add enable_speech to profile table
+		_, err = s.db.ExecContext(ctx, `
+			ALTER TABLE profiles
+			ADD COLUMN enable_speech BOOLEAN NOT NULL DEFAULT TRUE
+		`)
+		if err != nil {
+			return fmt.Errorf("store: add some_new_column: %w", err)
+		}
+	}
 	return nil
 }
 

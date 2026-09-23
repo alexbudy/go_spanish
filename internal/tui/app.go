@@ -86,20 +86,21 @@ func (m *Model) loadProfiles() {
 func (m *Model) buildProfileMenu() {
 	var items []choiceItem
 	for _, name := range m.existingProfiles {
-		items = append(items, choiceItem{label: name, value: name})
+		items = append(items, newChoiceItem(name, name))
 	}
 
 	// add a visual line break to the last element, if it exists
 	if len(items) > 0 {
-		items[len(items)-1].label += "\n    ----------"
+		items = append(items, newSeparatorItem())
 	}
 
 	// add one new profile entry for dynamic profile creation
 	if len(m.existingProfiles) < maxProfileSlots {
-		items = append(items, choiceItem{label: "New Profile", value: newProfileValue})
+		items = append(items, newChoiceItem("New Profile", newProfileValue))
 	}
 
-	items = append(items, choiceItem{label: "Exit :(", value: exitValue})
+	items = append(items, newChoiceItem("Exit :(", exitValue))
+
 	m.profileMenu = newChoiceList("Select a profile (or exit)", items)
 }
 

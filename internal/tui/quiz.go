@@ -139,8 +139,7 @@ func (m Model) updateQuestion(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.answerMenu.down()
 	case "tab":
 		go func() {
-			if err := speak(m.quiz.targetText, m.locale); err != nil {
-			}
+			_ = speak(m.quiz.targetText, m.locale)
 		}()
 	case "enter":
 		selected := m.answerMenu.selected().value

@@ -10,6 +10,7 @@ import (
 
 // model is getting large so place it in its own file
 
+// special values
 const (
 	// Limit to 8, so we can allow selecting by number (1-9) in the profile menu (allow 1 for exit).
 	maxProfileSlots = 8
