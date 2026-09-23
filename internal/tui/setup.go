@@ -29,9 +29,9 @@ func (m *Model) buildQuizModeMenu() {
 	b.WriteString("Select a quiz mode for ")
 
 	if m.locale == store.EsToEn {
-		b.WriteString("Spanish -> English translations \n")
+		b.WriteString("Spanish -> English translations")
 	} else {
-		b.WriteString("English -> Spanish translations\n")
+		b.WriteString("English -> Spanish translations")
 	}
 
 	m.quizModeMenu = newChoiceList(b.String(), []choiceItem{

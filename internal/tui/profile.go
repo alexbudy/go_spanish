@@ -47,7 +47,10 @@ func (m Model) updateProfileSelect(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		// Everything else goes to the text input
 		var cmd tea.Cmd
+
 		m.profileRenameInput, cmd = m.profileRenameInput.Update(msg)
+
+		m.profileMenu.renameInput = &m.profileRenameInput
 
 		return m, cmd
 	}
@@ -92,7 +95,7 @@ func (m Model) updateProfileSelect(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.profileRenaming = true
 		m.profileRenameIndex = m.profileMenu.cursor
 
-		m.profileRenameInput.SetValue("PH")
+		m.profileRenameInput.SetValue(selected.label)
 		m.profileRenameInput.CursorEnd()
 		m.profileRenameInput.Focus()
 

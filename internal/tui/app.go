@@ -48,8 +48,8 @@ func New(s *store.Store) Model {
 	m.profileRenameInput.Width = 20
 
 	m.profileRenameInput.Placeholder = "new name"
-	m.profileRenameInput.CharLimit = 32
 	m.profileRenameInput.Cursor.BlinkSpeed = 500 // TODO not working
+	m.profileRenameInput.Prompt = ""
 
 	defaultNumQuestions := "10"
 	m.numQuestionsInput = textinput.New()

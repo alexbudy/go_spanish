@@ -65,7 +65,7 @@ func (c choiceList) view(profile ...string) string {
 	for i, item := range c.items {
 		if i == c.cursor {
 			if i == c.renameIndex && c.renameInput != nil {
-				b.WriteString(selectedStyle.Render(strconv.Itoa(i+1) + ". "))
+				b.WriteString(selectedStyle.Render("> " + strconv.Itoa(i+1) + ". "))
 				b.WriteString(c.renameInput.View())
 			} else {
 				b.WriteString(cursorStyle.Render("> "))
