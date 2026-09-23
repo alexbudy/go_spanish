@@ -3,6 +3,8 @@ package tui
 import (
 	"strconv"
 	"strings"
+
+	"github.com/charmbracelet/bubbles/textinput"
 )
 
 // choiceItem is a single selectable entry in a choiceList.
@@ -18,6 +20,9 @@ type choiceList struct {
 	title  string
 	items  []choiceItem
 	cursor int
+
+	renameIndex int // index of item we are renaming (or -1 if not renaming)
+	renameInput *textinput.Model
 }
 
 func newChoiceList(title string, items []choiceItem) choiceList {
@@ -59,19 +64,23 @@ func (c choiceList) view(profile ...string) string {
 	}
 	for i, item := range c.items {
 		if i == c.cursor {
-			b.WriteString(cursorStyle.Render("> "))
+			if i == c.renameIndex && c.renameInput != nil {
+				b.WriteString(selectedStyle.Render(strconv.Itoa(i+1) + ". "))
+				b.WriteString(c.renameInput.View())
+			} else {
+				b.WriteString(cursorStyle.Render("> "))
 
-			lines := strings.Split(item.label, "\n")
-			b.WriteString(selectedStyle.Render(strconv.Itoa(i+1) + ". " + lines[0]))
+				lines := strings.Split(item.label, "\n")
+				b.WriteString(selectedStyle.Render(strconv.Itoa(i+1) + ". " + lines[0]))
 
-			// add secondary lines as part of selection, but with a different style so they don't compete with the primary line
-			if len(lines) > 1 {
-				for _, l := range lines[1:] {
-					b.WriteString("\n")
-					b.WriteString(selectedStyleSecondary.Render(l))
+				// add secondary lines as part of selection, but with a different style so they don't compete with the primary line
+				if len(lines) > 1 {
+					for _, l := range lines[1:] {
+						b.WriteString("\n")
+						b.WriteString(selectedStyleSecondary.Render(l))
+					}
 				}
 			}
-
 		} else {
 			b.WriteString("  " + strconv.Itoa(i+1) + ". ")
 			b.WriteString(item.label)

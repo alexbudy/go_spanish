@@ -262,6 +262,12 @@ func (s *Store) GetProfiles(ctx context.Context) ([]string, error) {
 	return names, rows.Err()
 }
 
+// UpdateProfileName updates the profile name for an existing profile.
+func (s *Store) UpdateProfileName(ctx context.Context, oldName, newName string) error {
+	_, err := s.db.ExecContext(ctx, "UPDATE profiles SET name = ? WHERE name = ?", newName, oldName)
+	return err
+}
+
 // GetAllWords returns every noun's text in both languages, as well as its rankings into the other direction,
 // used to build the pool of multiple-choice answers.
 func (s *Store) GetAllWords(ctx context.Context, profile string) ([]Word, error) {

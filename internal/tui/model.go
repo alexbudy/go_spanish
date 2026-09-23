@@ -32,6 +32,12 @@ type Model struct {
 	newProfileErr   string
 	delProfileErr   string
 
+	// renaming profile values
+	profileRenaming    bool
+	profileRenameIndex int
+	profileRenameInput textinput.Model
+	profileRenameErr   string
+
 	deleteProfileConfirmMenu   choiceList
 	deleteProfileSpecialPhrase string // user must type this to confirm deletion
 	specialDeletePhraseInput   textinput.Model

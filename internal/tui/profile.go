@@ -16,6 +16,42 @@ func (m Model) updateProfileSelect(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 
+	// Handle input while renaming a profile
+	if m.profileRenaming {
+		switch keyMsg.String() {
+		case "esc":
+			m.profileRenaming = false
+			m.profileRenameInput.Blur()
+
+			m.profileMenu.renameIndex = -1
+			m.profileMenu.renameInput = nil
+
+			return m, nil
+
+		case "enter":
+			// save the input
+			newName := m.profileRenameInput.Value()
+
+			m.store.UpdateProfileName(m.ctx, m.profileMenu.selected().value, newName)
+
+			m.profileMenu.items[m.profileRenameIndex].label = newName
+
+			m.profileRenaming = false
+			m.profileRenameInput.Blur()
+
+			m.profileMenu.renameIndex = -1
+			m.profileMenu.renameInput = nil
+
+			return m, nil
+		}
+
+		// Everything else goes to the text input
+		var cmd tea.Cmd
+		m.profileRenameInput, cmd = m.profileRenameInput.Update(msg)
+
+		return m, cmd
+	}
+
 	// Allow selecting a profile or option (new profile, exit) by number (1-based)
 	n, err := strconv.Atoi(keyMsg.String())
 	if err == nil { // 1-9 was pressed
@@ -44,12 +80,30 @@ func (m Model) updateProfileSelect(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.buildDirectionMenu()
 			m.screen = screenDirectionSelect
 		}
+	case "r":
+		selected := m.profileMenu.selected()
+
+		if selected.value == exitValue || selected.value == newProfileValue {
+			// can't rename 'exit' or 'new profile' options as they are not profiles
+			m.profileRenameErr = "Invalid renaming option selected"
+			break
+		}
+
+		m.profileRenaming = true
+		m.profileRenameIndex = m.profileMenu.cursor
+
+		m.profileRenameInput.SetValue("PH")
+		m.profileRenameInput.CursorEnd()
+		m.profileRenameInput.Focus()
+
+		m.profileMenu.renameIndex = m.profileRenameIndex
+		m.profileMenu.renameInput = &m.profileRenameInput
+		return m, textinput.Blink
 	case "delete", "d": // DEL was pressed
 		selected := m.profileMenu.selected()
 		if selected.value == exitValue || selected.value == newProfileValue {
 			// can't delete 'exit' or 'new profile' options as they are not profiles
 			m.delProfileErr = "Invalid deletion option selected"
-			m.screen = screenProfileSelect
 			break
 		}
 
@@ -75,7 +129,16 @@ func (m Model) viewProfileSelect() string {
 		b.WriteString(errorStyle.Render(m.delProfileErr))
 	}
 
-	b.WriteString(helpStyle.Render("\n↑/↓ to navigate • enter to select • [DEL]/'d' to delete a profile • q to quit"))
+	if m.profileRenameErr != "" {
+		b.WriteString("\n")
+		b.WriteString(errorStyle.Render(m.profileRenameErr))
+	}
+
+	if m.profileRenaming {
+		b.WriteString(helpStyle.Render("\nenter to save name change • esc to cancel"))
+	} else {
+		b.WriteString(helpStyle.Render("\n↑/↓ to navigate • enter to select • r to rename a profile • [DEL]/'d' to delete a profile • q to quit"))
+	}
 	return b.String()
 }
 
