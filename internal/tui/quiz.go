@@ -83,7 +83,7 @@ func (m *Model) loadNextQuestion() error {
 
 	// speak the word once when showing new word
 	go func() {
-		if err := speakSpanishWord(targetText); err != nil {
+		if err := speak(targetText, m.locale); err != nil {
 		}
 	}()
 
@@ -137,6 +137,11 @@ func (m Model) updateQuestion(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.answerMenu.up()
 	case "down", "j":
 		m.answerMenu.down()
+	case "tab":
+		go func() {
+			if err := speak(m.quiz.targetText, m.locale); err != nil {
+			}
+		}()
 	case "enter":
 		selected := m.answerMenu.selected().value
 		correct := selected == m.quiz.correctAnswer
@@ -161,7 +166,7 @@ func (m Model) updateQuestion(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) viewQuestion() string {
-	return m.answerMenu.view() + helpStyle.Render("\n↑/↓ to navigate • enter to select")
+	return m.answerMenu.view() + helpStyle.Render("\n↑/↓ to navigate • enter to select • tab to hear word again")
 }
 
 func (m Model) updateFeedback(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -251,6 +256,6 @@ func (m Model) viewResults() string {
 
 	b.WriteString("\n")
 	b.WriteString(m.answerMenu.view())
-	b.WriteString(helpStyle.Render("\n↑/↓ to navigate • enter to select"))
+	b.WriteString(helpStyle.Render("\nenter to continue"))
 	return b.String()
 }
