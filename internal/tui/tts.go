@@ -8,18 +8,81 @@ import (
 
 // Text-to-speech components
 func speak(word string, locale store.Locale) error {
-	voice := "David" // Microsoft English voice
 	if locale == store.EsToEn {
-		voice = "Sabina" // Microsoft Spanish voice
+		return speakSpanishWord(word)
 	}
+	return speakEnglishWord(word)
+}
+
+func speakSpanishWord(text string) error {
+	// Sabina - Mexican Spanish
+	// Helena and Laura - Spain Spanish
+	script := `
+		Add-Type -AssemblyName System.Speech
+
+		$s = New-Object System.Speech.Synthesis.SpeechSynthesizer
+
+		$preferred = @(
+			"Microsoft Sabina Desktop",
+			"Microsoft Helena Desktop",
+			"Microsoft Laura Desktop"
+		)
+
+		foreach ($name in $preferred) {
+			$voice = $s.GetInstalledVoices() |
+				Where-Object { $_.VoiceInfo.Name -eq $name } |
+				Select-Object -First 1
+
+			if ($voice) {
+				$s.SelectVoice($name)
+				break
+			}
+		}
+
+		$s.Speak("` + text + `")
+		`
 
 	cmd := exec.Command(
 		"powershell",
 		"-Command",
-		`Add-Type -AssemblyName System.Speech; $s = New-Object System.Speech.Synthesis.SpeechSynthesizer; $s.SelectVoice("Microsoft `+voice+` Desktop"); $s.Speak("`+word+`");`,
+		script,
+		text,
 	)
 
-	err := cmd.Run()
+	return cmd.Run()
+}
 
-	return err
+func speakEnglishWord(text string) error {
+	script := `
+		Add-Type -AssemblyName System.Speech
+
+		$s = New-Object System.Speech.Synthesis.SpeechSynthesizer
+
+		$preferred = @(
+			"Microsoft David Desktop",
+			"Microsoft Zira Desktop"
+		)
+
+		foreach ($name in $preferred) {
+			$voice = $s.GetInstalledVoices() |
+				Where-Object { $_.VoiceInfo.Name -eq $name } |
+				Select-Object -First 1
+
+			if ($voice) {
+				$s.SelectVoice($name)
+				break
+			}
+		}
+
+		$s.Speak("` + text + `")
+		`
+
+	cmd := exec.Command(
+		"powershell",
+		"-Command",
+		script,
+		text,
+	)
+
+	return cmd.Run()
 }
