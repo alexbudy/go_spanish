@@ -56,7 +56,7 @@ func (m Model) updateDeleteProfileConfirm(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// Allow deleting by number (1-based)
 	n, err := strconv.Atoi(keyMsg.String())
 	if err == nil && (n == 1 || n == 2) { // Add one for the Exit option
-		m.profileMenu.cursor = n - 1
+		m.deleteProfileConfirmMenu.cursor = n - 1
 
 		keyMsg = tea.KeyMsg{Type: tea.KeyEnter} // continue as if "enter" was pressed
 	}
@@ -155,7 +155,7 @@ func (m Model) updateDirectionSelect(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// Allow deleting by number (1-based)
 	n, err := strconv.Atoi(keyMsg.String())
 	if err == nil && (n == 1 || n == 2) { // Add one for the Exit option
-		m.profileMenu.cursor = n - 1
+		m.directionMenu.cursor = n - 1
 
 		keyMsg = tea.KeyMsg{Type: tea.KeyEnter} // continue as if "enter" was pressed
 	}

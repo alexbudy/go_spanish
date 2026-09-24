@@ -85,7 +85,7 @@ func (m *Model) buildWordDetailsMenu() {
 
 // Manage words screen - show all words, allow for reset, removal (TODO?)
 func (m Model) viewWordDetails() string {
-	return m.wordDetailsMenu.view() + helpStyle.Render("\n ↑/↓ to navigate • esc to go back • tab to pronounce • ctrl+r to reset selected score")
+	return m.wordDetailsMenu.view() + helpStyle.Render("\n ↑/↓ to navigate • esc to go back • p to pronounce • ctrl+r to reset selected score")
 }
 
 func (m Model) updateWordDetails(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -97,7 +97,7 @@ func (m Model) updateWordDetails(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch keyMsg.String() {
 	case "up", "k", "down", "j":
 		m.wordDetailsMenu.toggleSelectedLocale()
-	case "tab":
+	case "p", "tab":
 		// pronounce both words - TODO - cleaner way to do this?
 		if m.wordDetailsMenu.selected == store.EnToEs {
 			go func() {

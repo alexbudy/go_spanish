@@ -157,7 +157,7 @@ func (m *Model) buildManageWordsMenu() {
 
 // Manage words screen - show all words, allow for reset, removal (TODO)
 func (m Model) viewManageWords() string {
-	return m.manageWordsMenu.view() + helpStyle.Render("\n↑/↓ to navigate • enter to select • esc to go back • [PGUP/PGDN/HOME/END] to page by "+strconv.Itoa(entriesPerPage)+" words • [TAB] to swap direction")
+	return m.manageWordsMenu.view() + helpStyle.Render("\n↑/↓ to navigate • enter to select • esc to go back • [PGUP/PGDN/HOME/END] to page by "+strconv.Itoa(entriesPerPage)+" words • [TAB] to swap direction • p to pronounce")
 }
 
 func (m Model) updateManageWords(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -178,6 +178,24 @@ func (m Model) updateManageWords(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.manageWordsMenu.last()
 		case "tab":
 			m.manageWordsMenu.swapDirection()
+		case "p":
+			word := m.manageWordsMenu.items[m.manageWordsMenu.cursor]
+			// pronounce both words - TODO - cleaner way to do this?
+			if m.manageWordsMenu.direction == store.EnToEs {
+				go func() {
+					_ = speak(word.English, store.EnToEs)
+					go func() {
+						_ = speak(word.Spanish, store.EsToEn)
+					}()
+				}()
+			} else {
+				go func() {
+					_ = speak(word.Spanish, store.EsToEn)
+					go func() {
+						_ = speak(word.English, store.EnToEs)
+					}()
+				}()
+			}
 		case "enter":
 			m.buildWordDetailsMenu() // build the detail menu
 			m.screen = screenWordDetails

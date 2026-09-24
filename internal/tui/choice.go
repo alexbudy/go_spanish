@@ -119,7 +119,7 @@ func (c choiceList) view(profile ...string) string {
 func labeledItems(labels ...string) []choiceItem {
 	items := make([]choiceItem, len(labels))
 	for i, l := range labels {
-		items[i] = choiceItem{label: l, value: l}
+		items[i] = newChoiceItem(l, l)
 	}
 	return items
 }
