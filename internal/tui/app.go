@@ -21,6 +21,7 @@ const (
 	screenDeleteProfileConfirm
 	screenDeleteProfileConfirmFinal // final confirmation, require typing 'delete'
 	screenDirectionSelect
+	screenProfileSettings // profile settings screen
 	screenQuizModeSelect
 	screenManageWords
 	screenWordDetails // show details of a selected word
@@ -132,6 +133,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.updateDeleteProfileConfirmFinal(msg)
 	case screenDirectionSelect:
 		return m.updateDirectionSelect(msg)
+	// case screenProfileSettings:
+	// return m.updateProfileSettings()
 	case screenQuizModeSelect:
 		return m.updateQuizModeSelect(msg)
 	case screenManageWords:
@@ -168,6 +171,8 @@ func (m Model) View() string {
 		return m.viewDeleteProfileConfirmFinal()
 	case screenDirectionSelect:
 		return m.viewDirectionSelect()
+	// case screenProfileSettings:
+	// 	return m.viewProfileSettings()
 	case screenQuizModeSelect:
 		return m.viewQuizModeSelect()
 	case screenManageWords:

@@ -16,6 +16,7 @@ const (
 	maxProfileSlots = 8
 	newProfileValue = "__new__"
 	exitValue       = "__exit__"
+	profileSettings = "__settings__"
 )
 
 // Model is the root bubbletea model driving the whole application.

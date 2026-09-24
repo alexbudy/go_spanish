@@ -14,6 +14,8 @@ func (m *Model) buildDirectionMenu() {
 	m.directionMenu = newChoiceList("Select a training direction", []choiceItem{
 		newChoiceItem("Provide spanish words, select english words", string(store.EsToEn)),
 		newChoiceItem("Provide english words, select spanish words", string(store.EnToEs)),
+		newSeparatorItem(),
+		newChoiceItem("Profile Settings", profileSettings),
 	})
 }
 

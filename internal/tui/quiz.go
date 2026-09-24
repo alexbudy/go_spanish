@@ -187,6 +187,16 @@ func (m Model) updateFeedback(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m Model) viewFeedback() string {
 	var b strings.Builder
 	if m.quiz.wasCorrect {
+		// when you get a correct answer, pronounce the word
+		if m.locale == store.EnToEs {
+			go func() {
+				_ = speak(m.quiz.correctAnswer, store.EsToEn)
+			}()
+		} else {
+			go func() {
+				_ = speak(m.quiz.correctAnswer, store.EnToEs)
+			}()
+		}
 		b.WriteString(successStyle.Render("Correct!"))
 	} else {
 		b.WriteString(errorStyle.Render(
