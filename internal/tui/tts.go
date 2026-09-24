@@ -1,69 +1,39 @@
 package tui
 
 import (
+	"os"
 	"os/exec"
+	"strings"
 
 	"go_spanish/internal/store"
 )
 
 // Text-to-speech components
 func speak(word string, locale store.Locale) error {
-	if locale == store.EsToEn {
-		return speakSpanishWord(word)
+	preferred := []string{ // english voices
+		"Microsoft David Desktop",
+		"Microsoft Zira Desktop",
 	}
-	return speakEnglishWord(word)
-}
 
-func speakSpanishWord(text string) error {
-	// Sabina - Mexican Spanish
-	// Helena and Laura - Spain Spanish
-	script := `
-		Add-Type -AssemblyName System.Speech
-
-		$s = New-Object System.Speech.Synthesis.SpeechSynthesizer
-
-		$preferred = @(
+	if locale == store.EsToEn {
+		// spanish voices
+		preferred = []string{
 			"Microsoft Sabina Desktop",
 			"Microsoft Helena Desktop",
-			"Microsoft Laura Desktop"
-		)
-
-		foreach ($name in $preferred) {
-			$voice = $s.GetInstalledVoices() |
-				Where-Object { $_.VoiceInfo.Name -eq $name } |
-				Select-Object -First 1
-
-			if ($voice) {
-				$s.SelectVoice($name)
-				break
-			}
+			"Microsoft Laura Desktop",
 		}
+	}
 
-		$s.Speak("` + text + `")
-		`
-
-	cmd := exec.Command(
-		"powershell",
-		"-Command",
-		script,
-		text,
-	)
-
-	return cmd.Run()
+	return speakWithVoices(word, preferred)
 }
 
-func speakEnglishWord(text string) error {
+func speakWithVoices(text string, preferred []string) error {
 	script := `
 		Add-Type -AssemblyName System.Speech
 
 		$s = New-Object System.Speech.Synthesis.SpeechSynthesizer
 
-		$preferred = @(
-			"Microsoft David Desktop",
-			"Microsoft Zira Desktop"
-		)
-
-		foreach ($name in $preferred) {
+		foreach ($name in $env:TTS_VOICES -split '\|') {
 			$voice = $s.GetInstalledVoices() |
 				Where-Object { $_.VoiceInfo.Name -eq $name } |
 				Select-Object -First 1
@@ -74,14 +44,20 @@ func speakEnglishWord(text string) error {
 			}
 		}
 
-		$s.Speak("` + text + `")
+		$s.Speak($env:TTS_TEXT)
 		`
 
 	cmd := exec.Command(
-		"powershell",
+		"powershell.exe",
+		"-NoProfile",
 		"-Command",
 		script,
-		text,
+	)
+
+	cmd.Env = append(
+		os.Environ(),
+		"TTS_TEXT="+text,
+		"TTS_VOICES="+strings.Join(preferred, "|"),
 	)
 
 	return cmd.Run()
