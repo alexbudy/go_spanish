@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -131,7 +132,12 @@ func (psc profileSettingsConfig) view() string {
 }
 
 func (m *Model) buildProfileSettingsMenu() {
-	m.profileSettings = newProfileSettings("Profile settings for "+m.profile, m.profile, true, 10, 4)
+	profile, err := m.store.GetProfile(m.ctx, m.profile)
+	if err != nil {
+		fmt.Errorf("store: check some_new_column: %w", err)
+	}
+	m.profileSettings = newProfileSettings("Profile settings for "+m.profile, m.profile,
+		profile.EnableSpeech, profile.DefaultNumQuestions, profile.DefaultNumAnswers)
 }
 
 func (m Model) updateProfileSettings(msg tea.Msg) (tea.Model, tea.Cmd) {

@@ -119,13 +119,14 @@ func (s *Store) migrate(ctx context.Context) error {
 	var exists int
 	err := s.db.QueryRowContext(ctx, `
 		SELECT COUNT(*)
-		FROM pragma_table_info('rankings')
-		WHERE name = 'profiles'
+		FROM pragma_table_info('profiles')
+		WHERE name = 'enable_speech'
 	`).Scan(&exists)
 	if err != nil {
 		return fmt.Errorf("store: check some_new_column: %w", err)
 	}
 
+	// migration #1
 	if exists == 0 {
 		// add enable_speech to profile table
 		_, err = s.db.ExecContext(ctx, `
@@ -136,6 +137,37 @@ func (s *Store) migrate(ctx context.Context) error {
 			return fmt.Errorf("store: add some_new_column: %w", err)
 		}
 	}
+
+	// migration #2
+
+	err = s.db.QueryRowContext(ctx, `
+		SELECT COUNT(*)
+		FROM pragma_table_info('profiles')
+		WHERE name = 'default_num_questions' OR name='default_num_answers'
+	`).Scan(&exists)
+	if err != nil {
+		return fmt.Errorf("store: check some_new_column: %w", err)
+	}
+	if exists == 0 {
+		// add number of answers and questions default
+		_, err = s.db.ExecContext(ctx, `
+			ALTER TABLE profiles
+			ADD COLUMN default_num_questions INT NOT NULL DEFAULT 10
+
+		`)
+		if err != nil {
+			return fmt.Errorf("store: add some_new_column: %w", err)
+		}
+
+		_, err = s.db.ExecContext(ctx, `
+			ALTER TABLE profiles
+			ADD COLUMN default_num_answers INT NOT NULL DEFAULT 4
+		`)
+		if err != nil {
+			return fmt.Errorf("store: add some_new_column: %w", err)
+		}
+	}
+
 	return nil
 }
 
@@ -269,7 +301,7 @@ func (s *Store) DeleteProfile(ctx context.Context, name string) (int64, error) {
 	return deletedRows, tx.Commit()
 }
 
-// GetProfiles returns up to 3 non-deleted profile names, oldest first.
+// GetProfiles returns up to 8 non-deleted profile names, oldest first.
 func (s *Store) GetProfiles(ctx context.Context) ([]string, error) {
 	rows, err := s.db.QueryContext(ctx,
 		"SELECT name FROM profiles WHERE deleted_at IS NULL ORDER BY created_at ASC LIMIT 8")
@@ -287,6 +319,48 @@ func (s *Store) GetProfiles(ctx context.Context) ([]string, error) {
 		names = append(names, name)
 	}
 	return names, rows.Err()
+}
+
+type Profile struct {
+	ID                  int64
+	Name                string
+	EnableSpeech        bool
+	DefaultNumQuestions int
+	DefaultNumAnswers   int
+}
+
+// GetProfile returns the profile matching the provided name.
+func (s *Store) GetProfile(ctx context.Context, profile string) (Profile, error) {
+	rows, err := s.db.QueryContext(ctx,
+		"SELECT id, name, enable_speech, default_num_questions, default_num_answers FROM profiles WHERE name = ?", profile)
+	if err != nil {
+		return Profile{}, fmt.Errorf("store: get profile: %w", err)
+	}
+	defer rows.Close()
+
+	if !rows.Next() {
+		if err := rows.Err(); err != nil {
+			return Profile{}, fmt.Errorf("store: get profile %q: %w", profile, err)
+		}
+		return Profile{}, fmt.Errorf("store: get profile %q: %w", profile, sql.ErrNoRows)
+	}
+
+	var p Profile
+	if err := rows.Scan(&p.ID, &p.Name, &p.EnableSpeech, &p.DefaultNumQuestions, &p.DefaultNumAnswers); err != nil {
+		return Profile{}, fmt.Errorf("store: get profile %q: %w", profile, err)
+	}
+	if err := rows.Err(); err != nil {
+		return Profile{}, fmt.Errorf("store: get profile %q: %w", profile, err)
+	}
+	return p, nil
+}
+
+// UpdateProfile updates a profile based on p.name.
+func (s *Store) UpdateProfile(ctx context.Context, p Profile) error {
+	_, err := s.db.ExecContext(ctx,
+		"UPDATE profiles SET enable_speech = ?, default_num_questions = ?, default_num_answers = ? WHERE name = ?",
+		p.EnableSpeech, p.DefaultNumQuestions, p.DefaultNumAnswers, p.Name)
+	return err
 }
 
 // UpdateProfileName updates the profile name for an existing profile.
