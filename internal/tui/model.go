@@ -46,7 +46,10 @@ type Model struct {
 	invalidDeletePhraseErr     string
 
 	directionMenu choiceList
-	quizModeMenu  choiceList
+
+	profileSettings profileSettingsConfig
+
+	quizModeMenu choiceList
 
 	manageWordsMenu                  manageWordsList
 	manageWordsNumberInput           string // allow for multi digit number input

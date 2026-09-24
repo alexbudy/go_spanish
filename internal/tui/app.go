@@ -133,8 +133,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.updateDeleteProfileConfirmFinal(msg)
 	case screenDirectionSelect:
 		return m.updateDirectionSelect(msg)
-	// case screenProfileSettings:
-	// return m.updateProfileSettings()
+	case screenProfileSettings:
+		return m.updateProfileSettings(msg)
 	case screenQuizModeSelect:
 		return m.updateQuizModeSelect(msg)
 	case screenManageWords:
@@ -171,8 +171,8 @@ func (m Model) View() string {
 		return m.viewDeleteProfileConfirmFinal()
 	case screenDirectionSelect:
 		return m.viewDirectionSelect()
-	// case screenProfileSettings:
-	// 	return m.viewProfileSettings()
+	case screenProfileSettings:
+		return m.viewProfileSettings()
 	case screenQuizModeSelect:
 		return m.viewQuizModeSelect()
 	case screenManageWords:

@@ -14,6 +14,9 @@ var (
 	promptStyle            = lipgloss.NewStyle().Bold(true)
 	promptStyleProfile     = lipgloss.NewStyle().Bold(true).Italic(true)
 
+	// Profile setting page styles
+	ttsSelectionStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("16")).Background(lipgloss.Color("231")).Bold(true).PaddingLeft(1).PaddingRight(1)
+
 	// Deletion confirmation styles for emphasis
 	deleteConfirmStyle            = lipgloss.NewStyle().Foreground(lipgloss.Color("196"))
 	deleteConfirmSpecialWordStyle = lipgloss.NewStyle().Italic(true).Foreground(lipgloss.Color("196"))

@@ -156,7 +156,8 @@ func (m Model) updateDirectionSelect(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 	// Allow deleting by number (1-based)
 	n, err := strconv.Atoi(keyMsg.String())
-	if err == nil && (n == 1 || n == 2) { // Add one for the Exit option
+	if err == nil && (n >= 1 && n <= 3) { // Add one for the Exit option
+
 		m.directionMenu.cursor = n - 1
 
 		keyMsg = tea.KeyMsg{Type: tea.KeyEnter} // continue as if "enter" was pressed
@@ -168,6 +169,26 @@ func (m Model) updateDirectionSelect(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case "down", "j":
 		m.directionMenu.down()
 	case "enter":
+		selectableNumber := 0
+
+		for i, item := range m.directionMenu.items {
+			if !item.selectable {
+				continue
+			}
+
+			selectableNumber++
+
+			if selectableNumber == n {
+				m.directionMenu.cursor = i
+			}
+		}
+
+		if m.directionMenu.selected().value == profileSettings {
+			m.buildProfileSettingsMenu()
+			m.screen = screenProfileSettings
+			return m, nil
+		}
+
 		m.locale = store.Locale(m.directionMenu.selected().value)
 
 		m.buildQuizModeMenu()
@@ -182,6 +203,10 @@ func (m Model) updateDirectionSelect(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m Model) viewDirectionSelect() string {
 	return m.directionMenu.view(m.profile) + helpStyle.Render("\n↑/↓ to navigate • enter to select • esc to go back")
+}
+
+func (m Model) viewProfileSettings() string {
+	return m.profileSettings.view() + helpStyle.Render("\n↑/↓/⇆ to navigate • enter to select • esc to go back")
 }
 
 func (m Model) updateQuizModeSelect(msg tea.Msg) (tea.Model, tea.Cmd) {
