@@ -169,6 +169,8 @@ func (m Model) updateDirectionSelect(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case "down", "j":
 		m.directionMenu.down()
 	case "enter":
+		m.updateProfileSuccess = "" // reset success message if it already exists
+
 		selectableNumber := 0
 
 		for i, item := range m.directionMenu.items {
@@ -196,13 +198,25 @@ func (m Model) updateDirectionSelect(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, textinput.Blink
 	case "esc":
 		m.buildProfileMenu() // rebuild profile menu in case using new profile
+		m.updateProfileSuccess = ""
 		m.screen = screenProfileSelect
 	}
 	return m, nil
 }
 
 func (m Model) viewDirectionSelect() string {
-	return m.directionMenu.view(m.profile) + helpStyle.Render("\n↑/↓ to navigate • enter to select • esc to go back")
+	b := strings.Builder{}
+
+	b.WriteString(m.directionMenu.view(m.profile))
+
+	if m.updateProfileSuccess != "" {
+		b.WriteString("\n")
+		b.WriteString(successStyle.Render(m.updateProfileSuccess))
+	}
+
+	b.WriteString(helpStyle.Render("\n↑/↓ to navigate • enter to select • esc to go back"))
+
+	return b.String()
 }
 
 func (m Model) viewProfileSettings() string {

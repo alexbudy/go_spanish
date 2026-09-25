@@ -183,16 +183,16 @@ func (m Model) updateManageWords(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// pronounce both words - TODO - cleaner way to do this?
 			if m.manageWordsMenu.direction == store.EnToEs {
 				go func() {
-					_ = speak(word.English, store.EnToEs)
+					_ = speak(m, word.English, store.EnToEs)
 					go func() {
-						_ = speak(word.Spanish, store.EsToEn)
+						_ = speak(m, word.Spanish, store.EsToEn)
 					}()
 				}()
 			} else {
 				go func() {
-					_ = speak(word.Spanish, store.EsToEn)
+					_ = speak(m, word.Spanish, store.EsToEn)
 					go func() {
-						_ = speak(word.English, store.EnToEs)
+						_ = speak(m, word.English, store.EnToEs)
 					}()
 				}()
 			}

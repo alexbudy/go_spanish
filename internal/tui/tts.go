@@ -9,7 +9,11 @@ import (
 )
 
 // Text-to-speech components
-func speak(word string, locale store.Locale) error {
+func speak(m Model, word string, locale store.Locale) error {
+	if prof, err := m.store.GetProfile(m.ctx, m.profile); err == nil && !prof.EnableSpeech {
+		return nil // skip speaking if speech not enabled
+	}
+
 	preferred := []string{ // english voices
 		"Microsoft David Desktop",
 		"Microsoft Zira Desktop",

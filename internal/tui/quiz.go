@@ -83,7 +83,7 @@ func (m *Model) loadNextQuestion() error {
 
 	// speak the word once when showing new word
 	go func() {
-		if err := speak(targetText, m.locale); err != nil {
+		if err := speak(*m, targetText, m.locale); err != nil {
 		}
 	}()
 
@@ -139,7 +139,7 @@ func (m Model) updateQuestion(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.answerMenu.down()
 	case "tab":
 		go func() {
-			_ = speak(m.quiz.targetText, m.locale)
+			_ = speak(m, m.quiz.targetText, m.locale)
 		}()
 	case "enter":
 		selected := m.answerMenu.selected().value
@@ -190,11 +190,11 @@ func (m Model) viewFeedback() string {
 		// when you get a correct answer, pronounce the word
 		if m.locale == store.EnToEs {
 			go func() {
-				_ = speak(m.quiz.correctAnswer, store.EsToEn)
+				_ = speak(m, m.quiz.correctAnswer, store.EsToEn)
 			}()
 		} else {
 			go func() {
-				_ = speak(m.quiz.correctAnswer, store.EnToEs)
+				_ = speak(m, m.quiz.correctAnswer, store.EnToEs)
 			}()
 		}
 		b.WriteString(successStyle.Render("Correct!"))

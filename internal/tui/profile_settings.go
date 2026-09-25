@@ -6,6 +6,8 @@ import (
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
+
+	"go_spanish/internal/store"
 )
 
 type profileSetting int
@@ -208,12 +210,25 @@ func (m Model) updateProfileSettings(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case "enter":
 		if m.profileSettings.selectedSetting == settingSaveCancel {
 			if m.profileSettings.saveCancelSelection == saveSelected {
-				// save TODO
+				err := m.store.UpdateProfile(m.ctx,
+					store.Profile{
+						Name: m.profile, EnableSpeech: m.profileSettings.enableTTS,
+						DefaultNumQuestions: m.profileSettings.defaultNumQuestions,
+						DefaultNumAnswers:   m.profileSettings.defaultNumAnswerOptions,
+					})
+				if err != nil {
+					fmt.Errorf("store: check some_new_column: %w", err)
+					return m, nil
+				}
+
+				m.updateProfileSuccess = "Profile settings updated successfully"
+				m.screen = screenDirectionSelect
 			} else {
-				m.screen = screenProfileSelect
+				m.screen = screenDirectionSelect
 			}
 		}
 	case "esc":
+		m.updateProfileSuccess = ""
 		m.screen = screenProfileSelect
 	}
 

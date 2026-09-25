@@ -30,9 +30,10 @@ type Model struct {
 	existingProfiles []string
 	profileMenu      choiceList
 
-	newProfileInput textinput.Model
-	newProfileErr   string
-	delProfileErr   string
+	newProfileInput      textinput.Model
+	newProfileErr        string
+	delProfileErr        string
+	updateProfileSuccess string
 
 	// renaming profile values
 	profileRenaming    bool

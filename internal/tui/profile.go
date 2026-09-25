@@ -90,6 +90,7 @@ func (m Model) updateProfileSelect(msg tea.Msg) (tea.Model, tea.Cmd) {
 		default:
 			m.profile = selected.value
 			m.buildDirectionMenu()
+			m.newProfileErr = ""
 			m.screen = screenDirectionSelect
 		}
 	case "r":
@@ -110,6 +111,7 @@ func (m Model) updateProfileSelect(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		m.profileMenu.renameIndex = m.profileRenameIndex
 		m.profileMenu.renameInput = &m.profileRenameInput
+
 		return m, textinput.Blink
 	case "delete", "d": // DEL was pressed
 		selected := m.profileMenu.selected()
