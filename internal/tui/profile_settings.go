@@ -14,6 +14,14 @@ const (
 	settingTTS profileSetting = iota
 	settingNumQuestions
 	settingNumAnswerOptions
+	settingSaveCancel
+)
+
+type saveCancelSelection int
+
+const (
+	saveSelected saveCancelSelection = iota
+	cancelSelected
 )
 
 type profileSettingsConfig struct {
@@ -27,7 +35,8 @@ type profileSettingsConfig struct {
 
 	settingsUpdateMsg string // message to show when settings updated
 	settingsUpdateErr string // message to show when settings update fails
-	// TODO - show SAVE and CANCEL
+
+	saveCancelSelection saveCancelSelection
 }
 
 func newProfileSettings(title string, profile string, allowTTS bool, defaultNumQuestions int, defaultNumAnswerOptions int) profileSettingsConfig {
@@ -46,13 +55,16 @@ func (psc *profileSettingsConfig) toggleEnableTTS() {
 func (psc *profileSettingsConfig) up() {
 	switch psc.selectedSetting {
 	case settingTTS:
-		psc.selectedSetting = settingNumAnswerOptions
+		psc.selectedSetting = settingSaveCancel
 
 	case settingNumQuestions:
 		psc.selectedSetting = settingTTS
 
 	case settingNumAnswerOptions:
 		psc.selectedSetting = settingNumQuestions
+
+	case settingSaveCancel:
+		psc.selectedSetting = settingNumAnswerOptions
 	}
 }
 
@@ -65,6 +77,9 @@ func (psc *profileSettingsConfig) down() {
 		psc.selectedSetting = settingNumAnswerOptions
 
 	case settingNumAnswerOptions:
+		psc.selectedSetting = settingSaveCancel
+
+	case settingSaveCancel:
 		psc.selectedSetting = settingTTS
 	}
 }
@@ -128,6 +143,20 @@ func (psc profileSettingsConfig) view() string {
 	}
 	b.WriteString(ttsSelectionStyle.Render(strconv.Itoa(psc.defaultNumAnswerOptions)))
 
+	b.WriteString("\n\n")
+
+	if psc.selectedSetting == settingSaveCancel {
+		if psc.saveCancelSelection == saveSelected {
+			b.WriteString(selectedStyle.Render("> SAVE "))
+			b.WriteString("   CANCEL")
+		} else {
+			b.WriteString("  SAVE  ")
+			b.WriteString(selectedStyle.Render("> CANCEL"))
+		}
+	} else {
+		b.WriteString("  SAVE    CANCEL")
+	}
+
 	return b.String()
 }
 
@@ -159,6 +188,8 @@ func (m Model) updateProfileSettings(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.profileSettings.toggleEnableTTS()
 		} else if m.profileSettings.selectedSetting == settingNumAnswerOptions {
 			m.profileSettings.decreaseNumAnswers()
+		} else if m.profileSettings.selectedSetting == settingSaveCancel {
+			m.profileSettings.saveCancelSelection = saveSelected
 		}
 	case "right", "l":
 		if m.profileSettings.selectedSetting == settingNumQuestions {
@@ -167,10 +198,20 @@ func (m Model) updateProfileSettings(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.profileSettings.toggleEnableTTS()
 		} else if m.profileSettings.selectedSetting == settingNumAnswerOptions {
 			m.profileSettings.increaseNumAnswers()
+		} else if m.profileSettings.selectedSetting == settingSaveCancel {
+			m.profileSettings.saveCancelSelection = cancelSelected
 		}
 	case "tab":
 		if m.profileSettings.selectedSetting == settingTTS {
 			m.profileSettings.toggleEnableTTS()
+		}
+	case "enter":
+		if m.profileSettings.selectedSetting == settingSaveCancel {
+			if m.profileSettings.saveCancelSelection == saveSelected {
+				// save TODO
+			} else {
+				m.screen = screenProfileSelect
+			}
 		}
 	case "esc":
 		m.screen = screenProfileSelect
